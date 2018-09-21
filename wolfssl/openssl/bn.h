@@ -181,6 +181,8 @@ typedef WOLFSSL_BN_GENCB BN_GENCB;
 
 #define BN_mod_inverse wolfSSL_BN_mod_inverse
 
+#define BN_ULONG WOLFSSL_BN_ULONG
+
 #ifdef __cplusplus
     }  /* extern "C" */
 #endif

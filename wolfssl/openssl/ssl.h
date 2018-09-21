@@ -935,6 +935,7 @@ typedef WOLFSSL_ASN1_BIT_STRING    ASN1_BIT_STRING;
 #define X509_dup                          wolfSSL_X509_dup
 #define X509_STORE_CTX_new                wolfSSL_X509_STORE_CTX_new
 #define X509_STORE_CTX_free               wolfSSL_X509_STORE_CTX_free
+#define X509_STORE_CTX_verify_cb          wolfSSL_X509_STORE_CTX_verify_cb
 #define SSL_CTX_get_extra_chain_certs     wolfSSL_CTX_get_extra_chain_certs
 #define X509_STORE_CTX_get1_issuer        wolfSSL_X509_STORE_CTX_get1_issuer
 #define sk_OPENSSL_STRING_value           wolfSSL_sk_WOLFSSL_STRING_value
@@ -954,6 +955,7 @@ typedef WOLFSSL_ASN1_BIT_STRING    ASN1_BIT_STRING;
 #define SSL_CTX_add_client_CA             wolfSSL_CTX_add_client_CA
 #define SSL_CTX_set_srp_password          wolfSSL_CTX_set_srp_password
 #define SSL_CTX_set_srp_username          wolfSSL_CTX_set_srp_username
+
 
 #ifdef __cplusplus
     } /* extern "C" */

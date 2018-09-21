@@ -101,6 +101,10 @@ struct WOLFSSL_EC_KEY {
     char           exSet;        /* external set from internal ? */
 };
 
+struct wolfSSL_EC_builtin_curve {
+
+};
+
 #define WOLFSSL_EC_KEY_LOAD_PRIVATE 1
 #define WOLFSSL_EC_KEY_LOAD_PUBLIC  2
 
@@ -182,6 +186,7 @@ WOLFSSL_API
 int wolfSSL_EC_POINT_is_at_infinity(const WOLFSSL_EC_GROUP *group,
                                     const WOLFSSL_EC_POINT *a);
 
+#define EC_builtin_curve wolfSSL_EC_builtin_curve
 #define EC_KEY_free wolfSSL_EC_KEY_free
 #define EC_KEY_get0_public_key wolfSSL_EC_KEY_get0_public_key
 #define EC_KEY_get0_group wolfSSL_EC_KEY_get0_group

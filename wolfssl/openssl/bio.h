@@ -42,12 +42,12 @@
 #define BIO_next      wolfSSL_BIO_next
 #define BIO_gets      wolfSSL_BIO_gets
 
-
 #define BIO_TYPE_FILE WOLFSSL_BIO_FILE
 #define BIO_TYPE_BIO  WOLFSSL_BIO_BIO
 #define BIO_TYPE_MEM  WOLFSSL_BIO_MEMORY
 #define BIO_TYPE_BASE64 WOLFSSL_BIO_BASE64
 
+#define BIO_CTRL_PENDING     BIO_CTRL_WPENDING
 
 #ifdef __cplusplus
     }  /* extern "C" */ 
