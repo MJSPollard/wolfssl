@@ -57,6 +57,12 @@ WOLFSSL_API void *wolfSSL_OPENSSL_malloc(size_t a);
 #define OPENSSL_free wolfSSL_OPENSSL_free
 #define OPENSSL_malloc wolfSSL_OPENSSL_malloc
 
+// temp (aaron)
+#define WOLFSSL_INIT_LOAD_CONFIG 0x00000040L
+#define OPENSSL_INIT_LOAD_CONFIG WOLFSSL_INIT_LOAD_CONFIG
+// end temp
+
+
 #if defined(OPENSSL_ALL) || defined(HAVE_STUNNEL) || defined(WOLFSSL_NGINX) || \
     defined(WOLFSSL_HAPROXY) || defined(OPENSSL_EXTRA)
 #define CRYPTO_set_mem_ex_functions      wolfSSL_CRYPTO_set_mem_ex_functions

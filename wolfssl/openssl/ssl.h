@@ -746,6 +746,9 @@ typedef STACK_OF(WOLFSSL_ASN1_OBJECT) GENERAL_NAMES;
 
 #define SSL_CTRL_GET_EXTRA_CHAIN_CERTS          82
 
+// temp value for SSL_CTRL_GET_SESSION_REUSED (aaron)
+#define SSL_CTRL_GET_SESSION_REUSED 0
+
 #define SSL_ctrl     wolfSSL_ctrl
 #define SSL_CTX_ctrl wolfSSL_CTX_ctrl
 

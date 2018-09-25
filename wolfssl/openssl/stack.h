@@ -26,8 +26,10 @@
 
 #include <wolfssl/openssl/ssl.h>
 
+#define OPENSSL_STACK WOLFSSL_STACK
+
 #ifdef __cplusplus
      extern "C" {
 #endif
 
-#define OPENSSL_STACK WOLFSSL_STACK
+#endif
