@@ -68,6 +68,10 @@ typedef WOLFSSL_X509       X509_REQ;
 typedef WOLFSSL_X509_NAME  X509_NAME;
 typedef WOLFSSL_X509_CHAIN X509_CHAIN;
 
+#ifdef WOLFSSL_QT
+    typedef struct WOLFSSL_X509_PUBKEY     X509_PUBKEY;
+#endif
+
 typedef WOLFSSL_STACK      EXTENDED_KEY_USAGE;
 
 
