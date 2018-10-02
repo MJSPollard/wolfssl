@@ -356,6 +356,7 @@ typedef WOLFSSL_X509_STORE_CTX X509_STORE_CTX;
 #define X509_NAME_print_ex              wolfSSL_X509_NAME_print_ex
 #define X509_NAME_digest                wolfSSL_X509_NAME_digest
 #define X509_cmp_current_time           wolfSSL_X509_cmp_current_time
+#define X509_cmp                        wolfSSl_X509_cmp
 
 #define sk_X509_NAME_pop_free           wolfSSL_sk_X509_NAME_pop_free
 #define sk_X509_NAME_num                wolfSSL_sk_X509_NAME_num
