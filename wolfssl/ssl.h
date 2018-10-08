@@ -154,6 +154,7 @@ typedef struct WOLFSSL_DSA            WOLFSSL_DSA;
 typedef struct WOLFSSL_EC_KEY         WOLFSSL_EC_KEY;
 typedef struct WOLFSSL_EC_POINT       WOLFSSL_EC_POINT;
 typedef struct WOLFSSL_EC_GROUP       WOLFSSL_EC_GROUP;
+typedef struct wolfSSL_EC_builtin_curve wolfSSL_EC_builtin_curve;
 #define WOLFSSL_EC_TYPE_DEFINED
 #endif
 
@@ -180,6 +181,20 @@ typedef struct WOLFSSL_dynlock_value    WOLFSSL_dynlock_value;
 typedef struct WOLFSSL_DH               WOLFSSL_DH;
 typedef struct WOLFSSL_ASN1_BIT_STRING  WOLFSSL_ASN1_BIT_STRING;
 
+typedef struct WOLFSSL_AUTHORITY_KEYID  WOLFSSL_AUTHORITY_KEYID;
+typedef struct WOLFSSL_BASIC_CONSTRAINTS WOLFSSL_BASIC_CONSTRAINTS;
+
+struct WOLFSSL_AUTHORITY_KEYID {
+    WOLFSSL_ASN1_STRING *keyid;
+    WOLFSSL_ASN1_OBJECT *issuer;
+    WOLFSSL_ASN1_INTEGER *serial;
+};
+
+struct WOLFSSL_BASIC_CONSTRAINTS {
+    int ca;
+    WOLFSSL_ASN1_INTEGER *pathlen;
+};
+
 #define WOLFSSL_ASN1_UTCTIME          WOLFSSL_ASN1_TIME
 #define WOLFSSL_ASN1_GENERALIZEDTIME  WOLFSSL_ASN1_TIME
 
@@ -194,12 +209,20 @@ struct WOLFSSL_ASN1_INTEGER {
     unsigned char* data;
     unsigned int   dataMax;   /* max size of data buffer */
     unsigned int   isDynamic:1; /* flag for if data pointer dynamic (1 is yes 0 is no) */
+
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
+    int length;
+#endif
 };
 
 struct WOLFSSL_ASN1_TIME {
     /* MAX_DATA_SIZE is 32 */
     unsigned char data[32 + 2];
     /* ASN_TIME | LENGTH | date bytes */
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
+    int length;
+    int type;
+#endif
 };
 
 struct WOLFSSL_ASN1_STRING {
@@ -222,11 +245,17 @@ struct WOLFSSL_ASN1_OBJECT {
     unsigned char dynamic; /* if 1 then obj was dynamiclly created, 0 otherwise */
     #define WOLFSSL_ASN1_DYNAMIC 0x1
     #define WOLFSSL_ASN1_DYNAMIC_DATA 0x2
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
+    int ca;
+    WOLFSSL_ASN1_INTEGER *pathlen;
+#endif
+
     struct d { /* derefrenced */
         WOLFSSL_ASN1_STRING  ia5_internal;
         WOLFSSL_ASN1_STRING* ia5; /* points to ia5_internal */
         WOLFSSL_ASN1_STRING* dNSName;
         WOLFSSL_ASN1_STRING* iPAddress;
+        WOLFSSL_ASN1_STRING* uniformResourceIdentifier;
     } d;
 };
 
@@ -242,6 +271,10 @@ struct WOLFSSL_EVP_PKEY {
     #ifndef NO_RSA
         WOLFSSL_RSA* rsa;
         byte      ownRsa; /* if struct owns RSA and should free it */
+    #endif
+    #ifndef NO_DSA
+        WOLFSSL_DSA* dsa;
+        byte      ownDsa; /* if struct owns DSA and should free it */
     #endif
     #ifdef HAVE_ECC
         WOLFSSL_EC_KEY* ecc;
@@ -311,6 +344,22 @@ struct WOLFSSL_X509_STORE {
     WOLFSSL_X509_CRL *crl;
 #endif
 };
+
+#if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
+    #define wolfSSL_SSL_MODE_RELEASE_BUFFERS    0x00000010U
+    #define wolfSSL_SSL_CTRL_SET_TMP_ECDH       4
+
+   typedef struct WOLFSSL_X509_ALGOR {
+        /* TODO: this  */
+    } WOLFSSL_X509_ALGOR;
+
+    typedef struct WOLFSSL_X509_PUBKEY {
+        WOLFSSL_X509_ALGOR* algor;
+        WOLFSSL_ASN1_BIT_STRING* public_key;
+        WOLFSSL_EVP_PKEY* pkey;
+    } WOLFSSL_X509_PUBKEY;
+
+#endif
 
 #ifdef OPENSSL_EXTRA
 #define WOLFSSL_USE_CHECK_TIME 0x2
@@ -884,6 +933,8 @@ WOLFSSL_API int   wolfSSL_X509_STORE_CTX_get_error(WOLFSSL_X509_STORE_CTX*);
 WOLFSSL_API int   wolfSSL_X509_STORE_CTX_get_error_depth(WOLFSSL_X509_STORE_CTX*);
 
 WOLFSSL_API void  wolfSSL_X509_STORE_CTX_set_verify_cb(WOLFSSL_X509_STORE_CTX *ctx,
+                                  WOLFSSL_X509_STORE_CTX_verify_cb verify_cb);
+WOLFSSL_API void  wolfSSL_X509_STORE_CTX_set_verify_cb_func(WOLFSSL_X509_STORE *st,
                                   WOLFSSL_X509_STORE_CTX_verify_cb verify_cb);
 WOLFSSL_API int wolfSSL_i2d_X509_NAME(WOLFSSL_X509_NAME* n,
                                                            unsigned char** out);
@@ -2607,6 +2658,17 @@ WOLFSSL_API WOLFSSL_EVP_PKEY *wolfSSL_get_privatekey(const WOLFSSL *ssl);
 WOLFSSL_API int wolfSSL_use_RSAPrivateKey_ASN1(WOLFSSL* ssl, unsigned char* der,
                                                                 long derSz);
 #endif
+
+#ifdef WOLFSSL_QT
+WOLFSSL_API int wolfSSL_X509_cmp(const WOLFSSL_X509* a, const WOLFSSL_X509* b);
+WOLFSSL_API WOLFSSL_X509_EXTENSION* wolfSSL_X509_get_ext(const WOLFSSL_X509* x, int loc);
+WOLFSSL_API int wolfSSL_X509_get_ext_count(const WOLFSSL_X509* x);
+WOLFSSL_API WOLFSSL_EVP_PKEY* wolfSSL_X509_PUBKEY_get(WOLFSSL_X509_PUBKEY* key);
+WOLFSSL_API WOLFSSL_ASN1_OBJECT* wolfSSL_X509_EXTENSION_get_object(WOLFSSL_X509_EXTENSION* ex);
+WOLFSSL_API int wolfSSL_X509_EXTENSION_get_critical(const WOLFSSL_X509_EXTENSION* ex);
+WOLFSSL_API WOLFSSL_ASN1_STRING* wolfSSL_X509_EXTENSION_get_data(WOLFSSL_X509_EXTENSION* ex);
+#endif
+
 #endif /* NO_CERTS */
 
 WOLFSSL_API WOLFSSL_DH *wolfSSL_DSA_dup_DH(const WOLFSSL_DSA *r);
@@ -2932,6 +2994,12 @@ WOLFSSL_API char* wolfSSL_sk_WOLFSSL_STRING_value(
 WOLFSSL_API int PEM_write_bio_WOLFSSL_X509(WOLFSSL_BIO *bio,
     WOLFSSL_X509 *cert);
 
+WOLFSSL_API int PEM_write_bio_WOLFSSL_DSA_PUBKEY(WOLFSSL_BIO *bio,
+    DSA_PUBKEY *cert);
+
+WOLFSSL_API int PEM_write_bio_WOLFSSL_EC_PUBKEY(WOLFSSL_BIO *bio,
+    EC_PUBKEY *cert);
+
 #endif /* OPENSSL_ALL || WOLFSSL_NGINX || WOLFSSL_HAPROXY || 
     OPENSSL_EXTRA || HAVE_LIGHTY*/
 
@@ -2992,6 +3060,7 @@ WOLFSSL_API void wolfSSL_EC_POINT_dump(const char *msg, const WOLFSSL_EC_POINT *
 
 WOLFSSL_API const char *wolfSSL_ASN1_tag2str(int tag);
 WOLFSSL_API int wolfSSL_ASN1_STRING_print_ex(WOLFSSL_BIO *out, WOLFSSL_ASN1_STRING *str, unsigned long flags);
+WOLFSSL_API int wolfSSL_ASN1_STRING_print(WOLFSSL_BIO *out, WOLFSSL_ASN1_STRING *str);
 WOLFSSL_API int wolfSSL_ASN1_TIME_get_length(WOLFSSL_ASN1_TIME *t);
 WOLFSSL_API unsigned char* wolfSSL_ASN1_TIME_get_data(WOLFSSL_ASN1_TIME *t);
 WOLFSSL_API WOLFSSL_ASN1_TIME *wolfSSL_ASN1_TIME_to_generalizedtime(WOLFSSL_ASN1_TIME *t,

@@ -3432,7 +3432,6 @@ struct WOLFSSL_X509 {
     WOLFSSL_X509_NAME subject;
 };
 
-
 /* record layer header for PlainText, Compressed, and CipherText */
 typedef struct RecordLayerHeader {
     byte            type;
