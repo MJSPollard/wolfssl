@@ -32,11 +32,19 @@
     extern "C" {
 #endif
 
+WOLFSSL_API void wolfSSL_BIO_clear_flags(WOLFSSL_BIO *bio, int flags);
+WOLFSSL_API int wolfSSL_BIO_set_ex_data(WOLFSSL_BIO *bio, int idx, void *data);
+WOLFSSL_API void *wolfSSL_BIO_get_ex_data(WOLFSSL_BIO *bio, int idx);
+
 #define BIO_FLAG_BASE64_NO_NL WOLFSSL_BIO_FLAG_BASE64_NO_NL
 #define BIO_FLAG_READ         WOLFSSL_BIO_FLAG_READ
 #define BIO_FLAG_WRITE        WOLFSSL_BIO_FLAG_WRITE
 #define BIO_FLAG_IO_SPECIAL   WOLFSSL_BIO_FLAG_IO_SPECIAL
 #define BIO_FLAG_RETRY        WOLFSSL_BIO_FLAG_RETRY
+
+#define BIO_clear_flags       wolfSSL_BIO_clear_flags
+#define BIO_set_ex_data       wolfSSL_BIO_set_ex_data
+#define BIO_get_ex_data       wolfSSL_BIO_get_ex_data
 
 #define BIO_find_type wolfSSL_BIO_find_type
 #define BIO_next      wolfSSL_BIO_next
@@ -47,7 +55,7 @@
 #define BIO_TYPE_MEM  WOLFSSL_BIO_MEMORY
 #define BIO_TYPE_BASE64 WOLFSSL_BIO_BASE64
 
-#define BIO_CTRL_PENDING     BIO_CTRL_WPENDING
+#define BIO_CTRL_PENDING BIO_CTRL_WPENDING
 
 #ifdef __cplusplus
     }  /* extern "C" */ 
@@ -55,4 +63,3 @@
 
 
 #endif /* WOLFSSL_BIO_H_ */
-

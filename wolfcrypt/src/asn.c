@@ -2688,9 +2688,9 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
         return BAD_FUNC_ARG;
     }
 
+    (void)tmpIdx;
     (void)curveOID;
     (void)oidSz;
-    (void)tmpIdx;
     (void)keySz;
     (void)heap;
 
@@ -3520,6 +3520,12 @@ int wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz, const byte* e,
         mp_clear(&key->n);
         return ASN_GETINT_E;
     }
+#ifdef HAVE_WOLF_BIGINT
+    if ((int)nSz > 0 && wc_bigint_from_unsigned_bin(&key->n.raw, n, nSz) != 0) {
+        mp_clear(&key->n);
+        return ASN_GETINT_E;
+    }
+#endif /* HAVE_WOLF_BIGINT */
 
     if (mp_init(&key->e) != MP_OKAY) {
         mp_clear(&key->n);
@@ -3531,6 +3537,13 @@ int wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz, const byte* e,
         mp_clear(&key->e);
         return ASN_GETINT_E;
     }
+#ifdef HAVE_WOLF_BIGINT
+    if ((int)eSz > 0 && wc_bigint_from_unsigned_bin(&key->e.raw, e, eSz) != 0) {
+        mp_clear(&key->n);
+        mp_clear(&key->e);
+        return ASN_GETINT_E;
+    }
+#endif /* HAVE_WOLF_BIGINT */
 
 #ifdef WOLFSSL_XILINX_CRYPT
     if (wc_InitRsaHw(key) != 0) {
@@ -3753,7 +3766,8 @@ int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen)
 #endif /* NO_DSA */
 
 
-void InitDecodedCert(DecodedCert* cert, byte* source, word32 inSz, void* heap)
+void InitDecodedCert(DecodedCert* cert,
+                     const byte* source, word32 inSz, void* heap)
 {
     if (cert != NULL) {
         XMEMSET(cert, 0, sizeof(DecodedCert));
@@ -3813,7 +3827,7 @@ void FreeDecodedCert(DecodedCert* cert)
     if (cert->subjectCNStored == 1)
         XFREE(cert->subjectCN, cert->heap, DYNAMIC_TYPE_SUBJECT_CN);
     if (cert->pubKeyStored == 1)
-        XFREE(cert->publicKey, cert->heap, DYNAMIC_TYPE_PUBLIC_KEY);
+        XFREE((void*)cert->publicKey, cert->heap, DYNAMIC_TYPE_PUBLIC_KEY);
     if (cert->weOwnAltNames && cert->altNames)
         FreeAltNames(cert->altNames, cert->heap);
 #ifndef IGNORE_NAME_CONSTRAINTS
@@ -3941,6 +3955,7 @@ static int GetKey(DecodedCert* cert)
             word16      keyLen;
             word32      rc;
             word32      remaining = cert->maxIdx - cert->srcIdx;
+            byte*       publicKey;
 #ifdef WOLFSSL_SMALL_STACK
             byte*       keyBlob = NULL;
 #else
@@ -3978,15 +3993,16 @@ static int GetKey(DecodedCert* cert)
 
             cert->srcIdx = tmpIdx + (int)(next - key);
 
-            cert->publicKey = (byte*)XMALLOC(keyLen, cert->heap,
-                                             DYNAMIC_TYPE_PUBLIC_KEY);
-            if (cert->publicKey == NULL) {
+            publicKey = (byte*)XMALLOC(keyLen, cert->heap,
+                                       DYNAMIC_TYPE_PUBLIC_KEY);
+            if (publicKey == NULL) {
 #ifdef WOLFSSL_SMALL_STACK
                 XFREE(keyBlob, cert->heap, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
                 return MEMORY_E;
             }
-            XMEMCPY(cert->publicKey, keyBlob, keyLen);
+            XMEMCPY(publicKey, keyBlob, keyLen);
+            cert->publicKey = publicKey;
             cert->pubKeyStored = 1;
             cert->pubKeySize   = keyLen;
 
@@ -4003,6 +4019,7 @@ static int GetKey(DecodedCert* cert)
             int ret;
             byte seq[5];
             int pubLen = length + 1 + SetLength(length, seq);
+            byte* publicKey;
 
             if (cert->source[cert->srcIdx] !=
                                              (ASN_SEQUENCE | ASN_CONSTRUCTED)) {
@@ -4020,11 +4037,12 @@ static int GetKey(DecodedCert* cert)
                     return ret;
             }
 
-            cert->publicKey = (byte*)XMALLOC(pubLen, cert->heap,
-                                             DYNAMIC_TYPE_PUBLIC_KEY);
-            if (cert->publicKey == NULL)
+            publicKey = (byte*)XMALLOC(pubLen, cert->heap,
+                                       DYNAMIC_TYPE_PUBLIC_KEY);
+            if (publicKey == NULL)
                 return MEMORY_E;
-            XMEMCPY(cert->publicKey, &cert->source[tmpIdx], pubLen);
+            XMEMCPY(publicKey, &cert->source[tmpIdx], pubLen);
+            cert->publicKey = publicKey;
             cert->pubKeyStored = 1;
             cert->pubKeySize   = pubLen;
 
@@ -4036,6 +4054,7 @@ static int GetKey(DecodedCert* cert)
     #ifdef HAVE_ED25519
         case ED25519k:
         {
+            byte* publicKey;
             int ret;
 
             cert->pkCurveOID = ED25519k;
@@ -4045,11 +4064,12 @@ static int GetKey(DecodedCert* cert)
             if (ret != 0)
                 return ret;
 
-            cert->publicKey = (byte*) XMALLOC(length, cert->heap,
-                                              DYNAMIC_TYPE_PUBLIC_KEY);
-            if (cert->publicKey == NULL)
+            publicKey = (byte*) XMALLOC(length, cert->heap,
+                                        DYNAMIC_TYPE_PUBLIC_KEY);
+            if (publicKey == NULL)
                 return MEMORY_E;
-            XMEMCPY(cert->publicKey, &cert->source[cert->srcIdx], length);
+            XMEMCPY(publicKey, &cert->source[cert->srcIdx], length);
+            cert->publicKey = publicKey;
             cert->pubKeyStored = 1;
             cert->pubKeySize   = length;
 
@@ -4062,6 +4082,48 @@ static int GetKey(DecodedCert* cert)
             return ASN_UNKNOWN_OID_E;
     }
 }
+
+#if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
+WOLFSSL_LOCAL int OBJ_sn2nid(const char *sn)
+{
+    static const struct {
+        const char *sn;
+        int  nid;
+    } sn2nid[] = {
+        {WOLFSSL_COMMON_NAME, NID_commonName},
+        {WOLFSSL_COUNTRY_NAME, NID_countryName},
+        {WOLFSSL_LOCALITY_NAME, NID_localityName},
+        {WOLFSSL_STATE_NAME, NID_stateOrProvinceName},
+        {WOLFSSL_ORG_NAME, NID_organizationName},
+        {WOLFSSL_ORGUNIT_NAME, NID_organizationalUnitName},
+        {WOLFSSL_EMAIL_ADDR, NID_emailAddress},
+        {NULL, -1}};
+
+    int i;
+    WOLFSSL_ENTER("OBJ_osn2nid");
+    #ifdef HAVE_ECC
+    /* Nginx uses this OpenSSL string. */
+    if (XSTRNCMP(sn, "prime256v1", 10) == 0)
+        sn = "SECP256R1";
+    if (XSTRNCMP(sn, "secp384r1", 10) == 0)
+        sn = "SECP384R1";
+    /* find based on name and return NID */
+    for (i = 0; i < ecc_sets[i].size; i++) {
+        if (XSTRNCMP(sn, ecc_sets[i].name, ECC_MAXNAME) == 0) {
+            return ecc_sets[i].id;
+        }
+    }
+    #endif
+    
+    for(i=0; sn2nid[i].sn != NULL; i++) {
+        if(XSTRNCMP(sn, sn2nid[i].sn, XSTRLEN(sn2nid[i].sn)) == 0) {
+            return sn2nid[i].nid;
+        }
+    }
+
+    return NID_undef;
+}
+#endif
 
 /* process NAME, either issuer or subject */
 static int GetName(DecodedCert* cert, int nameType)
@@ -4543,6 +4605,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->cnLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_COMMON_NAME, 4);
+                dName->cnNid = OBJ_sn2nid((const char *)WOLFSSL_COMMON_NAME);
                 idx += 4;
                 XMEMCPY(&dName->fullName[idx],
                                      &cert->source[dName->cnIdx], dName->cnLen);
@@ -4552,6 +4615,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->snLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_SUR_NAME, 4);
+                dName->snNid = OBJ_sn2nid((const char *)WOLFSSL_SUR_NAME);
                 idx += 4;
                 XMEMCPY(&dName->fullName[idx],
                                      &cert->source[dName->snIdx], dName->snLen);
@@ -4561,6 +4625,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->cLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_COUNTRY_NAME, 3);
+                dName->cNid = OBJ_sn2nid((const char *)WOLFSSL_COUNTRY_NAME);
                 idx += 3;
                 XMEMCPY(&dName->fullName[idx],
                                        &cert->source[dName->cIdx], dName->cLen);
@@ -4570,6 +4635,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->lLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_LOCALITY_NAME, 3);
+                dName->lNid = OBJ_sn2nid((const char *)WOLFSSL_LOCALITY_NAME);
                 idx += 3;
                 XMEMCPY(&dName->fullName[idx],
                                        &cert->source[dName->lIdx], dName->lLen);
@@ -4579,6 +4645,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->stLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_STATE_NAME, 4);
+                dName->stNid = OBJ_sn2nid((const char *)WOLFSSL_STATE_NAME);
                 idx += 4;
                 XMEMCPY(&dName->fullName[idx],
                                      &cert->source[dName->stIdx], dName->stLen);
@@ -4588,6 +4655,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->oLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_ORG_NAME, 3);
+                dName->oNid = OBJ_sn2nid((const char *)WOLFSSL_ORG_NAME);
                 idx += 3;
                 XMEMCPY(&dName->fullName[idx],
                                        &cert->source[dName->oIdx], dName->oLen);
@@ -4597,6 +4665,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->ouLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_ORGUNIT_NAME, 4);
+                dName->ouNid = OBJ_sn2nid((const char *)WOLFSSL_ORGUNIT_NAME);
                 idx += 4;
                 XMEMCPY(&dName->fullName[idx],
                                      &cert->source[dName->ouIdx], dName->ouLen);
@@ -4606,6 +4675,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->emailLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], "/emailAddress=", 14);
+                dName->emailNid = OBJ_sn2nid((const char *)"/emailAddress=");
                 idx += 14;
                 XMEMCPY(&dName->fullName[idx],
                                &cert->source[dName->emailIdx], dName->emailLen);
@@ -4626,6 +4696,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->uidLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], "/UID=", 5);
+                dName->uidNid = OBJ_sn2nid((const char *)"/UID=");
                 idx += 5;
                 XMEMCPY(&dName->fullName[idx],
                                    &cert->source[dName->uidIdx], dName->uidLen);
@@ -4635,6 +4706,7 @@ static int GetName(DecodedCert* cert, int nameType)
             if (dName->serialLen != 0) {
                 dName->entryCount++;
                 XMEMCPY(&dName->fullName[idx], WOLFSSL_SERIAL_NUMBER, 14);
+                dName->serialNid = OBJ_sn2nid((const char *)WOLFSSL_SERIAL_NUMBER);
                 idx += 14;
                 XMEMCPY(&dName->fullName[idx],
                              &cert->source[dName->serialIdx], dName->serialLen);
@@ -5921,7 +5993,7 @@ static int ConfirmNameConstraints(Signer* signer, DecodedCert* cert)
 
 #endif /* IGNORE_NAME_CONSTRAINTS */
 
-static int DecodeAltNames(byte* input, int sz, DecodedCert* cert)
+static int DecodeAltNames(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0;
@@ -6178,7 +6250,7 @@ static int DecodeAltNames(byte* input, int sz, DecodedCert* cert)
     return 0;
 }
 
-static int DecodeBasicCaConstraint(byte* input, int sz, DecodedCert* cert)
+static int DecodeBasicCaConstraint(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0;
@@ -6225,7 +6297,7 @@ static int DecodeBasicCaConstraint(byte* input, int sz, DecodedCert* cert)
 #define GENERALNAME_URI 6
     /* From RFC3280 SS4.2.1.7, GeneralName */
 
-static int DecodeCrlDist(byte* input, int sz, DecodedCert* cert)
+static int DecodeCrlDist(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0;
@@ -6306,7 +6378,7 @@ static int DecodeCrlDist(byte* input, int sz, DecodedCert* cert)
 }
 
 
-static int DecodeAuthInfo(byte* input, int sz, DecodedCert* cert)
+static int DecodeAuthInfo(const byte* input, int sz, DecodedCert* cert)
 /*
  *  Read the first of the Authority Information Access records. If there are
  *  any issues, return without saving the record.
@@ -6352,7 +6424,7 @@ static int DecodeAuthInfo(byte* input, int sz, DecodedCert* cert)
 }
 
 
-static int DecodeAuthKeyId(byte* input, int sz, DecodedCert* cert)
+static int DecodeAuthKeyId(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0, ret = 0;
@@ -6389,7 +6461,7 @@ static int DecodeAuthKeyId(byte* input, int sz, DecodedCert* cert)
 }
 
 
-static int DecodeSubjKeyId(byte* input, int sz, DecodedCert* cert)
+static int DecodeSubjKeyId(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0, ret = 0;
@@ -6418,7 +6490,7 @@ static int DecodeSubjKeyId(byte* input, int sz, DecodedCert* cert)
 }
 
 
-static int DecodeKeyUsage(byte* input, int sz, DecodedCert* cert)
+static int DecodeKeyUsage(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length;
@@ -6437,7 +6509,7 @@ static int DecodeKeyUsage(byte* input, int sz, DecodedCert* cert)
 }
 
 
-static int DecodeExtKeyUsage(byte* input, int sz, DecodedCert* cert)
+static int DecodeExtKeyUsage(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0, oid;
     int length, ret;
@@ -6496,7 +6568,8 @@ static int DecodeExtKeyUsage(byte* input, int sz, DecodedCert* cert)
 
 #ifndef IGNORE_NAME_CONSTRAINTS
 #define ASN_TYPE_MASK 0xF
-static int DecodeSubtree(byte* input, int sz, Base_entry** head, void* heap)
+static int DecodeSubtree(const byte* input, int sz,
+                         Base_entry** head, void* heap)
 {
     word32 idx = 0;
 
@@ -6563,7 +6636,7 @@ static int DecodeSubtree(byte* input, int sz, Base_entry** head, void* heap)
 }
 
 
-static int DecodeNameConstraints(byte* input, int sz, DecodedCert* cert)
+static int DecodeNameConstraints(const byte* input, int sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0;
@@ -6638,7 +6711,7 @@ static int Word32ToString(char* d, word32 number)
 
 /* Decode ITU-T X.690 OID format to a string representation
  * return string length */
-int DecodePolicyOID(char *out, word32 outSz, byte *in, word32 inSz)
+int DecodePolicyOID(char *out, word32 outSz, const byte *in, word32 inSz)
 {
     word32 val, idx = 0, nb_bytes;
     size_t w_bytes = 0;
@@ -6691,7 +6764,7 @@ int DecodePolicyOID(char *out, word32 outSz, byte *in, word32 inSz)
 
 #if defined(WOLFSSL_SEP) || defined(WOLFSSL_CERT_EXT)
     /* Reference: https://tools.ietf.org/html/rfc5280#section-4.2.1.4 */
-    static int DecodeCertPolicy(byte* input, int sz, DecodedCert* cert)
+    static int DecodeCertPolicy(const byte* input, int sz, DecodedCert* cert)
     {
         word32 idx = 0;
         word32 oldIdx;
@@ -6809,7 +6882,7 @@ static int DecodeCertExtensions(DecodedCert* cert)
     int ret = 0;
     word32 idx = 0;
     int sz = cert->extensionsSz;
-    byte* input = cert->extensions;
+    const byte* input = cert->extensions;
     int length;
     word32 oid;
     byte critical = 0;
@@ -7585,7 +7658,7 @@ Signer* MakeSigner(void* heap)
 void FreeSigner(Signer* signer, void* heap)
 {
     XFREE(signer->name, heap, DYNAMIC_TYPE_SUBJECT_CN);
-    XFREE(signer->publicKey, heap, DYNAMIC_TYPE_PUBLIC_KEY);
+    XFREE((void*)signer->publicKey, heap, DYNAMIC_TYPE_PUBLIC_KEY);
 #ifndef IGNORE_NAME_CONSTRAINTS
     if (signer->permittedNames)
         FreeNameSubtrees(signer->permittedNames, heap);
@@ -9625,7 +9698,7 @@ static int SetValidity(byte* output, int daysValid)
     afterSz  = SetLength(ASN_GEN_TIME_SZ, after + 1) + 1;  /* gen tag */
 
     /* add daysValid of seconds */
-    then = now + (daysValid * 3600);
+    then = now + (daysValid * 86400);
     expandedTime = XGMTIME(&then, tmpTime);
     if (expandedTime == NULL) {
         WOLFSSL_MSG("XGMTIME failed");
@@ -11820,7 +11893,7 @@ int wc_SetAuthKeyIdFromCert(Cert *cert, const byte *der, int derSz)
 #endif
 
     /* decode certificate and get SKID that will be AKID of current cert */
-    InitDecodedCert(decoded, (byte*)der, derSz, NULL);
+    InitDecodedCert(decoded, der, derSz, NULL);
     ret = ParseCert(decoded, CERT_TYPE, NO_VERIFY, 0);
     if (ret != 0) {
         FreeDecodedCert(decoded);
@@ -12064,7 +12137,7 @@ static int SetAltNamesFromCert(Cert* cert, const byte* der, int derSz)
         return MEMORY_E;
 #endif
 
-    InitDecodedCert(decoded, (byte*)der, derSz, NULL);
+    InitDecodedCert(decoded, der, derSz, NULL);
     ret = ParseCertRelative(decoded, CA_TYPE, NO_VERIFY, 0);
 
     if (ret < 0) {
@@ -12160,7 +12233,7 @@ static int SetDatesFromCert(Cert* cert, const byte* der, int derSz)
         return MEMORY_E;
 #endif
 
-    InitDecodedCert(decoded, (byte*)der, derSz, NULL);
+    InitDecodedCert(decoded, der, derSz, NULL);
     ret = ParseCertRelative(decoded, CA_TYPE, NO_VERIFY, 0);
 
     if (ret < 0) {
@@ -12214,7 +12287,7 @@ static int SetNameFromCert(CertName* cn, const byte* der, int derSz)
         return MEMORY_E;
 #endif
 
-    InitDecodedCert(decoded, (byte*)der, derSz, NULL);
+    InitDecodedCert(decoded, der, derSz, NULL);
     ret = ParseCertRelative(decoded, CA_TYPE, NO_VERIFY, 0);
 
     if (ret < 0) {
@@ -12340,7 +12413,7 @@ static int SetSubjectRawFromCert(byte* sbjRaw, const byte* der, int derSz)
     }
 #endif
 
-    InitDecodedCert(decoded, (byte*)der, derSz, NULL);
+    InitDecodedCert(decoded, der, derSz, NULL);
     ret = ParseCertRelative(decoded, CA_TYPE, NO_VERIFY, 0);
 
     if (ret < 0) {
@@ -12392,7 +12465,7 @@ static int SetIssuerRawFromCert(byte* issuerRaw, const byte* der, int derSz)
     }
 #endif
 
-    InitDecodedCert(decoded, (byte*)der, derSz, NULL);
+    InitDecodedCert(decoded, der, derSz, NULL);
     ret = ParseCertRelative(decoded, CA_TYPE, NO_VERIFY, 0);
 
     if (ret < 0) {

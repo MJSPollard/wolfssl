@@ -3394,7 +3394,7 @@ struct WOLFSSL_X509 {
     byte*            authKeyId;
     byte*            subjKeyId;
     byte*            extKeyUsageSrc;
-    byte*            CRLInfo;
+    const byte*      CRLInfo;
     byte*            authInfo;
     word32           pathLength;
     word16           keyUsage;
@@ -3431,7 +3431,6 @@ struct WOLFSSL_X509 {
     WOLFSSL_X509_NAME issuer;
     WOLFSSL_X509_NAME subject;
 };
-
 
 /* record layer header for PlainText, Compressed, and CipherText */
 typedef struct RecordLayerHeader {
