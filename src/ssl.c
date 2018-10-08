@@ -11564,6 +11564,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
             return WOLFSSL_FATAL_ERROR;
     }
 
+    #ifndef NO_WOLFSSL_STUB
     int wolfSSL_OpenSSL_add_all_algorithms_noconf(void)
     {
         WOLFSSL_ENTER("wolfSSL_OpenSSL_add_all_algorithms_noconf");
@@ -11573,8 +11574,8 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
 
         return  WOLFSSL_SUCCESS;
     }
+    #endif
 
-    /* Qt stub */
     #ifndef NO_WOLFSSL_STUB
     int wolfSSL_OpenSSL_add_all_algorithms_conf(void)
     {
@@ -13581,23 +13582,18 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md)
         return WOLFSSL_SUCCESS;
     }
 
-    /* Stub for Qt */
+    #if defined(WOLFSSL_QT) && !defined(NO_WOLFSSL_STUB)
     int wolfSSL_EVP_CIPHER_CTX_ctrl(WOLFSSL_EVP_CIPHER_CTX *ctx, int type,
                                                             int arg, void *ptr)
     {
+        (void)ctx;
+        (void)type;
+        (void)arg;
+        (void)ptr;
         WOLFSSL_ENTER("EVP_CIPHER_CTX_ctrl");
-        /* use arguements to get ridden of compile time error */
-        if (ctx) {
-
-        }
-        if (type && arg) {
-
-        }
-        if (ptr == NULL) {
-
-        }
         return WOLFSSL_SUCCESS;
     }
+    #endif
 
 #ifndef NO_AES
     static int   AesSetKey_ex(Aes* aes, const byte* key, word32 len,
@@ -23219,13 +23215,12 @@ int wolfSSL_BN_is_odd(const WOLFSSL_BIGNUM* bn)
     return WOLFSSL_FAILURE;
 }
 
- /* stub for Qt */
+#if defined(WOLFSSL_QT) && !defined(NO_WOLFSSL_STUB)
 int wolfSSL_BN_is_word(const WOLFSSL_BIGNUM* bn, WOLFSSL_BN_ULONG w)
 {
+    (void) w;
     WOLFSSL_MSG("wolfSSL_BN_is_word");
-    if (w) {
 
-    }
     if (bn == NULL || bn->internal == NULL) {
         WOLFSSL_MSG("bn NULL error");
         return WOLFSSL_FAILURE;
@@ -23238,6 +23233,7 @@ int wolfSSL_BN_is_word(const WOLFSSL_BIGNUM* bn, WOLFSSL_BN_ULONG w)
      */
      return WOLFSSL_SUCCESS;
 }
+#endif
 
 /* return compliant with OpenSSL
  *   -1 if a < b, 0 if a == b and 1 if a > b
@@ -26438,9 +26434,7 @@ int wolfSSL_EVP_PKEY_set1_RSA(WOLFSSL_EVP_PKEY *pkey, WOLFSSL_RSA *key)
 }
 #endif /* NO_RSA */
 
-#ifndef NO_WOLFSSL_STUB
-
-#ifndef NO_DSA
+#if defined(WOLFSSL_QT) && !defined(NO_DSA) && !defined(NO_WOLFSSL_STUB)
 int wolfSSL_EVP_PKEY_set1_DSA(WOLFSSL_EVP_PKEY *pkey, WOLFSSL_DSA *key)
 {
     if((pkey == NULL) || (key ==NULL))return WOLFSSL_FAILURE;
@@ -26454,12 +26448,9 @@ int wolfSSL_EVP_PKEY_set1_DSA(WOLFSSL_EVP_PKEY *pkey, WOLFSSL_DSA *key)
 
     return WOLFSSL_SUCCESS;
 }
-#endif /* NO_DSA */
+#endif
 
-#endif /* NO_WOLFSSL_STUB */
-
-/* Stub for Qt */
-#ifndef NO_WOLFSSL_STUB
+#if defined(WOLFSSL_QT) && !defined(NO_WOLFSSL_STUB)
 int wolfSSL_EVP_PKEY_set1_EC_KEY(WOLFSSL_EVP_PKEY *pkey, WOLFSSL_EC_KEY *key)
 {
     if((pkey == NULL) || (key == NULL))return WOLFSSL_FAILURE;
@@ -34694,6 +34685,7 @@ void wolfSSL_OPENSSL_config(char *config_name)
     WOLFSSL_STUB("OPENSSL_config");
 }
 #endif
+
 #endif
 
 #if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) \
