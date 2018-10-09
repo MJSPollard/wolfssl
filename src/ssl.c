@@ -7199,6 +7199,13 @@ int wolfSSL_check_private_key(const WOLFSSL* ssl)
         return 0;
     }
 
+    char* wolfSSL_CONF_get1_default_config_file(void)
+    {
+        WOLFSSL_ENTER("wolfSSL_CONF_get1_default_config_file");
+        WOLFSSL_STUB("CONF_get1_default_config_file");
+        return NULL;
+    }
+
 #endif /* defined(WOLFSSL_QT) && !defined(NO_WOLFSSL_STUB) */
 
 
@@ -12255,11 +12262,24 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
 
     /* stub for Qt */
     #ifndef NO_WOLFSSL_STUB
-    void wolfSSL_X509_STORE_CTX_set_verify_cb_func(WOLFSSL_X509_STORE *st,
-                                  WOLFSSL_X509_STORE_CTX_verify_cb verify_cb){
+    void wolfSSL_X509_STORE_set_verify_cb_func(WOLFSSL_X509_STORE *st,
+                                     WOLFSSL_X509_STORE_CTX_verify_cb verify_cb)
+    {
+        WOLFSSL_ENTER("WOLFSSL_X509_STORE_set_verify_cb_fun");
         (void)st;
         (void)verify_cb;
+        WOLFSSL_STUB("X509_STORE_set_verify_cb_func");
+    }
+    #endif
 
+    #ifndef NO_WOLFSSL_STUB
+    void wolfSSL_X509_STORE_CTX_set_verify_cb_func(WOLFSSL_X509_STORE *st,
+                                  WOLFSSL_X509_STORE_CTX_verify_cb verify_cb)
+    {
+        WOLFSSL_ENTER("WOLFSSL_X509_STORE_CTX_set_verify_cb_fun");
+        (void)st;
+        (void)verify_cb;
+        WOLFSSL_STUB("X509_STORE_CTX_set_verify_cb_func");
     }
     #endif
 
@@ -13662,6 +13682,13 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md)
         WOLFSSL_ENTER("EVP_CIPHER_CTX_ctrl");
         return WOLFSSL_SUCCESS;
     }
+    const WOLFSSL_EVP_CIPHER* wolfSSL_EVP_rc2_cbc(void)
+    {
+        WOLFSSL_ENTER("wolfSSL_EVP_rc2_cbc");
+        WOLFSSL_STUB("EVP_rc2_cbc");
+        return NULL;
+    }
+
     #endif
 
 #ifndef NO_AES
@@ -15994,6 +16021,18 @@ void wolfSSL_sk_GENERAL_NAME_pop_free(WOLFSSL_STACK* sk,
 
 
 }
+/* Frees GENERAL_NAME objects.
+   WOLFSSL_ASN1_OBJECT type is a placeholder until GENERAL_NAME is implemented.
+*/
+#ifndef NO_WOLFSSL_STUB
+void wolfSSL_GENERAL_NAME_free(WOLFSSL_ASN1_OBJECT* name)
+{
+    WOLFSSL_ENTER("wolfSSL_GENERAL_NAME_Free");
+    (void)name;
+    WOLFSSL_STUB("GENERAL_NAME_FREE");
+}
+#endif
+
 #endif /* OPENSSL_EXTRA */
 
 #ifndef NO_FILESYSTEM
@@ -35079,16 +35118,6 @@ void wolfSSL_OPENSSL_config(char *config_name)
     (void)config_name;
     WOLFSSL_STUB("OPENSSL_config");
 }
-
-#ifdef WOLFSSL_QT
-char* wolfSSL_CONF_get1_default_config_file(void)
-{
-    WOLFSSL_ENTER("wolfSSL_CONF_get1_default_config_file");
-    WOLFSSL_STUB("CONF_get1_default_config_file");
-    return NULL;
-}
-#endif /* WOLFSSL_QT */
-
 #endif /* NO_WOLFSSL_STUB */
 
 #endif
