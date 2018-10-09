@@ -28783,7 +28783,7 @@ WOLFSSL_EC_KEY* wolfSSL_PEM_read_bio_EC_PUBKEY(WOLFSSL_BIO* bio,
     WOLFSSL_STUB("PEM_read_bio_EC_PUBKEY");
     WOLFSSL_MSG("wolfSSL_PEM_read_bio_EC_PUBKEY not implemented");
 
-    return WOLFSSL_FAILURE;
+    return NULL;
 }
 #endif
 
@@ -28803,7 +28803,7 @@ WOLFSSL_EC_KEY* wolfSSL_PEM_read_bio_ECPrivateKey(WOLFSSL_BIO* bio,
     WOLFSSL_STUB("PEM_read_bio_ECPrivateKey");
     WOLFSSL_MSG("wolfSSL_PEM_read_bio_ECPrivateKey not implemented");
 
-    return WOLFSSL_FAILURE;
+    return NULL;
 }
 #endif
 
@@ -29058,7 +29058,7 @@ WOLFSSL_DSA* wolfSSL_PEM_read_bio_DSAPrivateKey(WOLFSSL_BIO* bio,
     WOLFSSL_ENTER("wolfSSL_PEM_read_bio_DSAPrivateKey");
     WOLFSSL_STUB("PEM_read_bio_DSAPrivateKey");
 
-    return WOLFSSL_FAILURE;
+    return NULL;
 }
 
 int wolfSSL_PEM_write_bio_DSA_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_DSA* dsa)
