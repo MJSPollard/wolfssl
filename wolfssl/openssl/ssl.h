@@ -44,6 +44,7 @@
 #include <wolfssl/openssl/dh.h>
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/settings.h>
+
 #endif
 
 /* all NID_* values are in asn.h */
@@ -100,10 +101,10 @@ typedef WOLFSSL_ASN1_STRING    ASN1_STRING;
 typedef WOLFSSL_dynlock_value  CRYPTO_dynlock_value;
 typedef WOLFSSL_BUF_MEM        BUF_MEM;
 
-/* GENERAL_NAME and BASIC_CONSTRAINTS structs may need implemented as
- * compatibility layer expands. For now treating them as an ASN1_OBJECT */
+
+/* GENERAL_NAME struct may need implemented as
+ * compatibility layer expands. For now treating as an ASN1_OBJECT */
 typedef WOLFSSL_ASN1_OBJECT GENERAL_NAME;
-//typedef WOLFSSL_ASN1_OBJECT BASIC_CONSTRAINTS;
 
 #define ASN1_UTCTIME         WOLFSSL_ASN1_TIME
 #define ASN1_GENERALIZEDTIME WOLFSSL_ASN1_TIME
@@ -119,6 +120,8 @@ typedef WOLFSSL_X509_STORE_CTX X509_STORE_CTX;
 #define STACK_OF(x) WOLFSSL_STACK
 #define OPENSSL_STACK WOLFSSL_STACK
 #define _STACK OPENSSL_STACK
+
+#define CONF_get1_default_config_file   wolfSSL_CONF_get1_default_config_file
 
 #define CRYPTO_free                     XFREE
 #define CRYPTO_malloc                   XMALLOC
@@ -389,7 +392,7 @@ typedef WOLFSSL_X509_STORE_CTX X509_STORE_CTX;
 #define X509_STORE_CTX_get_current_cert wolfSSL_X509_STORE_CTX_get_current_cert
 #define X509_STORE_CTX_set_verify_cb    wolfSSL_X509_STORE_CTX_set_verify_cb
 #define X509_STORE_CTX_set_verify_cb_func wolfSSL_X509_STORE_CTX_set_verify_cb_func
-#define X509_STORE_set_verify_cb_func   wolfssl_X509_STORE_set_verify_cb_func
+#define X509_STORE_set_verify_cb_func(s, c)   wolfSSL_X509_STORE_set_verify_cb_func((WOLFSSL_X509_STORE *)(s), (WOLFSSL_X509_STORE_CTX_verify_cb)(c))
 #define X509_STORE_CTX_new              wolfSSL_X509_STORE_CTX_new
 #define X509_STORE_CTX_free             wolfSSL_X509_STORE_CTX_free
 #define X509_STORE_CTX_get_chain        wolfSSL_X509_STORE_CTX_get_chain
