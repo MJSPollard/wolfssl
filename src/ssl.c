@@ -27628,7 +27628,6 @@ int wolfSSL_PEM_write_bio_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key)
 {
     byte* keyDer;
     int pemSz;
-    int type;
     int ret;
     byte* tmp;
 
@@ -27640,27 +27639,7 @@ int wolfSSL_PEM_write_bio_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key)
 
     keyDer = (byte*)key->pkey.ptr;
 
-    switch (key->type) {
-        case EVP_PKEY_RSA:
-            type = PUBLICKEY_TYPE;
-            break;
-
-#ifndef NO_DSA
-        case EVP_PKEY_DSA:
-            type = DSA_PUBLIC;
-            break;
-#endif
-
-        case EVP_PKEY_EC:
-            type = ECC_PUBLICKEY;
-            break;
-
-        default:
-            WOLFSSL_MSG("Unknown Key type!");
-            type = PUBLICKEY_TYPE;
-    }
-
-    pemSz = wc_DerToPem(keyDer, key->pkey_sz, NULL, 0, type);
+    pemSz = wc_DerToPem(keyDer, key->pkey_sz, NULL, 0, PUBLICKEY_TYPE);
     if (pemSz < 0) {
         WOLFSSL_LEAVE("wolfSSL_PEM_write_bio_PUBKEY", pemSz);
         return WOLFSSL_FAILURE;
@@ -27671,7 +27650,7 @@ int wolfSSL_PEM_write_bio_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key)
     }
 
     ret = wc_DerToPemEx(keyDer, key->pkey_sz, tmp, pemSz,
-                                NULL, type);
+                                NULL, PUBLICKEY_TYPE);
     if (ret < 0) {
         WOLFSSL_LEAVE("wolfSSL_PEM_write_bio_PUBKEY", ret);
         XFREE(tmp, bio->heap, DYNAMIC_TYPE_OPENSSL);
@@ -29496,7 +29475,9 @@ int wolfSSL_PEM_write_bio_EC_PUBKEY(WOLFSSL_BIO* bio,
     XMEMCPY(pkey->pkey.ptr, derBuf, derSz);
     XFREE(derBuf, bio->heap, DYNAMIC_TYPE_TMP_BUFFER);
 
-    ret = wolfSSL_PEM_write_bio_PUBKEY(bio, pkey);
+    if((ret = wolfSSL_PEM_write_bio_PUBKEY(bio, pkey)) != WOLFSSL_SUCCESS){
+        WOLFSSL_MSG("wolfSSL_PEM_write_bio_PUBKEY failed");
+    }
     wolfSSL_EVP_PKEY_free(pkey);
 
     return ret;
