@@ -33268,7 +33268,6 @@ void* wolfSSL_GetDhAgreeCtx(WOLFSSL* ssl)
 #endif /* HAVE_ECC */
 #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
     int wolfSSL_OBJ_sn2nid(const char *sn) {
-
         WOLFSSL_ENTER("wolfSSL_OBJ_sn2nid");
         return wc_OBJ_sn2nid(sn);
     }
