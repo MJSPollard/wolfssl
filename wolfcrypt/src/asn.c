@@ -4187,34 +4187,34 @@ int DsaPublicKeyDecode(const byte* input, word32* inOutIdx, DsaKey* key,
         return ASN_DH_KEY_E;
 
 
-    mp_radix_size((mp_int*)&key->p, MP_RADIX_HEX, &length);
-    //maybe do xfree xmalloc cuz example has it in ssl.c
-    length += 1;
-    char outpeet[length];
-    mp_tohex((mp_int*)&key->p, outpeet);
-    //printf("\nint p: \n");
-    //printf("%s\n\n\n", outpeet);
+    // mp_radix_size((mp_int*)&key->p, MP_RADIX_HEX, &length);
+    // //maybe do xfree xmalloc cuz example has it in ssl.c
+    // length += 1;
+    // char outpeet[length];
+    // mp_tohex((mp_int*)&key->p, outpeet);
+    // //printf("\nint p: \n");
+    // //printf("%s\n\n\n", outpeet);
 
-    mp_radix_size((mp_int*)&key->q, MP_RADIX_HEX, &length);
-    length += 1;
-    char outpeet1[length];
-    mp_tohex((mp_int*)&key->q, outpeet1);
-    //printf("\nint q: \n");
-    //printf("%s\n\n\n", outpeet1);
+    // mp_radix_size((mp_int*)&key->q, MP_RADIX_HEX, &length);
+    // length += 1;
+    // char outpeet1[length];
+    // mp_tohex((mp_int*)&key->q, outpeet1);
+    // //printf("\nint q: \n");
+    // //printf("%s\n\n\n", outpeet1);
 
-    mp_radix_size((mp_int*)&key->g, MP_RADIX_HEX, &length);
-    length += 1;
-    char outpeet2[length];
-    mp_tohex((mp_int*)&key->g, outpeet2);
-    //printf("\nint g: \n");
-    //printf("%s\n\n\n", outpeet2);
+    // mp_radix_size((mp_int*)&key->g, MP_RADIX_HEX, &length);
+    // length += 1;
+    // char outpeet2[length];
+    // mp_tohex((mp_int*)&key->g, outpeet2);
+    // //printf("\nint g: \n");
+    // //printf("%s\n\n\n", outpeet2);
 
-    mp_radix_size((mp_int*)&key->y, MP_RADIX_HEX, &length);
-    length += 1;
-    char outpeet3[length];
-    mp_tohex((mp_int*)&key->y, outpeet3);
-    //printf("\nint y: \n");
-    //printf("%s\n\n\n", outpeet3);
+    // mp_radix_size((mp_int*)&key->y, MP_RADIX_HEX, &length);
+    // length += 1;
+    // char outpeet3[length];
+    // mp_tohex((mp_int*)&key->y, outpeet3);
+    // //printf("\nint y: \n");
+    // //printf("%s\n\n\n", outpeet3);
 
 
             //%%%%%%

@@ -842,21 +842,21 @@ int wc_DsaVerify(const byte* digest, const byte* sig, DsaKey* key, int* answer)
         *answer = 1;
     else{
         *answer = 0;
-        printf("MP_EQ fail\n\n");
-        printf("\n\nMP_EQ = %d\n\n", MP_EQ);
-        printf("\nmp_cmp(&r, &v) = %d\n", mp_cmp(&r, &v));
-        //printf("\nr = %d\n", r);
-        //printf("\nv = %d\n", v);
-        int length;
-        mp_radix_size(&r, MP_RADIX_HEX, &length);
-        //maybe do xfree xmalloc cuz example has it in ssl.c
-        length += 1;
-        //char outpeet[length];
-        char *outpeet;
-        outpeet = (char*)XMALLOC(length, NULL, DYNAMIC_TYPE_OPENSSL);
-        mp_tohex((mp_int*)&key->p, outpeet);
-        printf("\nint p: \n");
-        printf("%s\n\n\n", outpeet);
+        // printf("MP_EQ fail\n\n");
+        // printf("\n\nMP_EQ = %d\n\n", MP_EQ);
+        // printf("\nmp_cmp(&r, &v) = %d\n", mp_cmp(&r, &v));
+        // //printf("\nr = %d\n", r);
+        // //printf("\nv = %d\n", v);
+        // int length;
+        // mp_radix_size(&r, MP_RADIX_HEX, &length);
+        // //maybe do xfree xmalloc cuz example has it in ssl.c
+        // length += 1;
+        // //char outpeet[length];
+        // char *outpeet;
+        // outpeet = (char*)XMALLOC(length, NULL, DYNAMIC_TYPE_OPENSSL);
+        // mp_tohex((mp_int*)&key->p, outpeet);
+        // printf("\nint p: \n");
+        // printf("%s\n\n\n", outpeet);
 
     }
 
