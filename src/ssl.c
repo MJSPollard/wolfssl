@@ -27809,11 +27809,15 @@ int wolfSSL_PEM_write_bio_RSAPrivateKey(WOLFSSL_BIO* bio, WOLFSSL_RSA* key,
 
     WOLFSSL_ENTER("wolfSSL_PEM_write_bio_RSAPrivateKey");
 
+    if (bio == NULL || key == NULL) {
+        WOLFSSL_MSG("Bad Function Arguments");
+        return WOLFSSL_FAILURE;
+    }
 
     pkey = wolfSSL_PKEY_new_ex(bio->heap);
     if (pkey == NULL) {
         WOLFSSL_MSG("wolfSSL_PKEY_new_ex failed");
-        return SSL_FAILURE;
+        return WOLFSSL_FAILURE;
     }
 
     pkey->type   = EVP_PKEY_RSA;
@@ -27871,14 +27875,21 @@ int wolfSSL_PEM_write_bio_RSAPrivateKey(WOLFSSL_BIO* bio, WOLFSSL_RSA* key,
 
 #if defined(WOLFSSL_QT) || defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)
 
-/* return WOLFSSL_SUCCESS or WOLFSSL_FAILURE */
+/* Takes an RSA public key and writes it out to a WOLFSSL_BIO
+ * Returns WOLFSSL_SUCCESS or WOLFSSL_FAILURE
+ */
 int wolfSSL_PEM_write_bio_RSA_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_RSA* rsa)
 {
     int ret = 0, derMax = 0, derSz = 0;
-    byte *derBuf;
-    WOLFSSL_EVP_PKEY* pkey;
+    byte *derBuf = NULL;
+    WOLFSSL_EVP_PKEY* pkey = NULL;
 
     WOLFSSL_ENTER("wolfSSL_PEM_write_bio_RSA_PUBKEY");
+
+    if (bio == NULL || rsa == NULL) {
+        WOLFSSL_MSG("Bad Function Arguments");
+        return WOLFSSL_FAILURE;
+    }
 
     /* Initialize pkey structure */
     pkey = wolfSSL_PKEY_new_ex(bio->heap);
@@ -27931,11 +27942,16 @@ int wolfSSL_PEM_write_bio_RSA_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_RSA* rsa)
     return ret;
 }
 
+
+/* Reads an RSA public key from a WOLFSSL_BIO into a WOLFSSL_RSA
+ * Returns WOLFSSL_SUCCESS or WOLFSSL_FAILURE
+ */
 WOLFSSL_RSA *wolfSSL_PEM_read_bio_RSA_PUBKEY(WOLFSSL_BIO* bio,WOLFSSL_RSA** rsa,
                                                 pem_password_cb* cb, void *pass)
 {
     WOLFSSL_EVP_PKEY* pkey;
     WOLFSSL_RSA* local;
+
     WOLFSSL_ENTER("wolfSSL_PEM_read_bio_RSA_PUBKEY");
 
     pkey = wolfSSL_PEM_read_bio_PUBKEY(bio, NULL, cb, pass);
@@ -27971,6 +27987,9 @@ WOLFSSL_RSA *wolfSSL_PEM_read_bio_RSA_PUBKEY(WOLFSSL_BIO* bio,WOLFSSL_RSA** rsa,
 #endif /* NO_RSA */
 
 
+/* Takes a public key and writes it out to a WOLFSSL_BIO
+ * Returns WOLFSSL_SUCCESS or WOLFSSL_FAILURE
+ */
 int wolfSSL_PEM_write_bio_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key)
 {
     byte* keyDer;
@@ -28014,6 +28033,9 @@ int wolfSSL_PEM_write_bio_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key)
     return WOLFSSL_SUCCESS;
 }
 
+/* Takes a private key and writes it out to a WOLFSSL_BIO
+ * Returns WOLFSSL_SUCCESS or WOLFSSL_FAILURE
+ */
 int wolfSSL_PEM_write_bio_PrivateKey(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key,
                                         const WOLFSSL_EVP_CIPHER* cipher,
                                         unsigned char* passwd, int len,
@@ -28034,6 +28056,7 @@ int wolfSSL_PEM_write_bio_PrivateKey(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key,
     WOLFSSL_ENTER("wolfSSL_PEM_write_bio_PrivateKey");
 
     if (bio == NULL || key == NULL) {
+        WOLFSSL_MSG("Bad Function Arguments");
         return WOLFSSL_FAILURE;
     }
 
@@ -28052,9 +28075,11 @@ int wolfSSL_PEM_write_bio_PrivateKey(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key,
             break;
 #endif
 
+#ifdef HAVE_ECC
         case EVP_PKEY_EC:
             type = ECC_PRIVATEKEY_TYPE;
             break;
+#endif
 
         default:
             WOLFSSL_MSG("Unknown Key type!");
@@ -28076,17 +28101,17 @@ int wolfSSL_PEM_write_bio_PrivateKey(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key,
     if (ret < 0) {
         WOLFSSL_LEAVE("wolfSSL_PEM_write_bio_PrivateKey", ret);
         XFREE(tmp, bio->heap, DYNAMIC_TYPE_OPENSSL);
-        return SSL_FAILURE;
+        return WOLFSSL_FAILURE;
     }
 
     ret = wolfSSL_BIO_write(bio, tmp, pemSz);
     XFREE(tmp, bio->heap, DYNAMIC_TYPE_OPENSSL);
     if (ret != pemSz) {
         WOLFSSL_MSG("Unable to write full PEM to BIO");
-        return SSL_FAILURE;
+        return WOLFSSL_FAILURE;
     }
 
-    return SSL_SUCCESS;
+    return WOLFSSL_SUCCESS;
 }
 #endif /* defined(WOLFSSL_KEY_GEN) || defined(WOLFSSL_CERT_GEN) */
 
