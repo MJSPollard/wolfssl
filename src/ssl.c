@@ -12520,24 +12520,13 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
     {
         WOLFSSL_ENTER("WOLFSSL_X509_STORE_set_verify_cb");
         if(st==NULL){
-            WOLFSSL_MSG("passed WOLFSSL_X509_STORE is NULL");
+            WOLFSSL_MSG("passed argument: WOLFSSL_X509_STORE is NULL");
             return;
         }
         st->verify_cb = verify_cb;
         WOLFSSL_LEAVE("wolfSSL_X509_STORE_set_verify_cb()", WOLFSSL_SUCCESS);
     }
     #endif /* ifdef WOLFSSL_QT */
-
-    #ifndef NO_WOLFSSL_STUB
-    void wolfSSL_X509_STORE_CTX_set_verify_cb_func(WOLFSSL_X509_STORE *st,
-                                  WOLFSSL_X509_STORE_CTX_verify_cb verify_cb)
-    {
-        WOLFSSL_ENTER("WOLFSSL_X509_STORE_CTX_set_verify_cb_fun");
-        (void)st;
-        (void)verify_cb;
-        WOLFSSL_STUB("X509_STORE_CTX_set_verify_cb_func");
-    }
-    #endif
 
 
 #endif /* !NO_CERTS */
@@ -32205,7 +32194,7 @@ void* wolfSSL_GetDhAgreeCtx(WOLFSSL* ssl)
         return x509;
     }
 
-#if defined(HAVE_CRL) && !defined(NO_FILESYSTEM)
+#if !defined(NO_FILESYSTEM)
     static void* wolfSSL_PEM_read_X509_ex(XFILE fp, void **x,
                                                     pem_password_cb *cb, void *u, int type)
     {
