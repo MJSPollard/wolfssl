@@ -100,7 +100,6 @@
     #endif
 #endif
 
-
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -133,7 +132,6 @@ typedef void  *WOLFSSL_X509_STORE_CTX_verify_cb; /* verify callback */
 #define WOLFSSL_TYPES_DEFINED
 
 #include <wolfssl/wolfio.h>
-
 
 #ifndef WOLFSSL_RSA_TYPE_DEFINED /* guard on redeclaration */
 typedef struct WOLFSSL_RSA            WOLFSSL_RSA;
@@ -185,7 +183,7 @@ typedef struct WOLFSSL_GENERAL_NAME WOLFSSL_GENERAL_NAME;
 typedef struct WOLFSSL_AUTHORITY_KEYID  WOLFSSL_AUTHORITY_KEYID;
 typedef struct WOLFSSL_BASIC_CONSTRAINTS WOLFSSL_BASIC_CONSTRAINTS;
 
-#if defined(OPENSSL_ALL) || defined (WOLFSSL_QT)
+#if defined(OPENSSL_ALL) || defined (WOLFSSL_QT) || defined(OPENSSL_EXTRA)
 
 struct WOLFSSL_GENERAL_NAME {
     int type;
@@ -367,8 +365,7 @@ struct WOLFSSL_X509_STORE {
     #define wolfSSL_SSL_CTRL_SET_TMP_ECDH       4
     #define WOLFSSL_ASN1_BOOLEAN                int
 
-
-   typedef struct WOLFSSL_X509_ALGOR {
+    typedef struct WOLFSSL_X509_ALGOR {
         /* TODO: this  */
     } WOLFSSL_X509_ALGOR;
 
@@ -377,12 +374,6 @@ struct WOLFSSL_X509_STORE {
         WOLFSSL_ASN1_BIT_STRING* public_key;
         WOLFSSL_EVP_PKEY* pkey;
     } WOLFSSL_X509_PUBKEY;
-
-    struct WOLFSSL_X509_EXTENSION {
-        WOLFSSL_ASN1_OBJECT *obj;
-        WOLFSSL_ASN1_BOOLEAN crit;
-        WOLFSSL_ASN1_STRING value;
-    };
 
 #endif
 
@@ -883,6 +874,11 @@ WOLFSSL_API const char*  wolfSSL_get_version(WOLFSSL*);
 WOLFSSL_API int  wolfSSL_get_current_cipher_suite(WOLFSSL* ssl);
 WOLFSSL_API WOLFSSL_CIPHER*  wolfSSL_get_current_cipher(WOLFSSL*);
 WOLFSSL_API char* wolfSSL_CIPHER_description(const WOLFSSL_CIPHER*, char*, int);
+#if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
+/* used in wolfSSL_CIPHER_description_all */
+#define MAX_SEGMENT_SZ 20
+#endif
+WOLFSSL_API char* wolfSSL_CIPHER_description_all(const WOLFSSL_CIPHER*, char*, int);
 WOLFSSL_API const char*  wolfSSL_CIPHER_get_name(const WOLFSSL_CIPHER* cipher);
 WOLFSSL_API const char*  wolfSSL_SESSION_CIPHER_get_name(WOLFSSL_SESSION* session);
 WOLFSSL_API const char*  wolfSSL_get_cipher(WOLFSSL*);
