@@ -18381,8 +18381,8 @@ static void test_wolfSSL_PEM_PrivateKey(void)
 
 static void test_wolfSSL_PEM_bio_RSAKey(void)
 {
-    #if defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
-       !defined(NO_FILESYSTEM) && !defined(NO_RSA)
+    #if (defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)) && defined(WOLFSSL_CERT_GEN) || \
+    defined(WOLFSSL_KEY_GEN)&& !defined(NO_FILESYSTEM) && !defined(NO_RSA)
     RSA* rsa = NULL;
     BIO* bio = NULL;
 
@@ -18430,8 +18430,8 @@ static void test_wolfSSL_PEM_bio_RSAKey(void)
 
 static void test_wolfSSL_PEM_bio_DSAKey(void)
 {
-    #if defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
-       !defined(NO_FILESYSTEM) && !defined(NO_DSA) && defined(WOLFSSL_KEY_GEN)
+    #if (defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)) && defined(WOLFSSL_CERT_GEN) || \
+    defined(WOLFSSL_KEY_GEN)&& !defined(NO_FILESYSTEM) && !defined(NO_DSA)
     DSA* dsa = NULL;
     BIO* bio = NULL;
 
@@ -18479,8 +18479,8 @@ static void test_wolfSSL_PEM_bio_DSAKey(void)
 
 static void test_wolfSSL_PEM_bio_ECKey(void)
 {
-    #if defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
-       !defined(NO_FILESYSTEM) && defined(HAVE_ECC)
+    #if (defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)) && defined(WOLFSSL_CERT_GEN) || \
+    defined(WOLFSSL_KEY_GEN)&& !defined(NO_FILESYSTEM) && defined(HAVE_ECC)
     EC_KEY* ec = NULL;
     BIO* bio = NULL;
 
