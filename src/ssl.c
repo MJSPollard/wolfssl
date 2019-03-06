@@ -17185,6 +17185,7 @@ void wolfSSL_sk_ASN1_OBJECT_pop_free(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk,
     WOLFSSL_STACK* node;
 
     WOLFSSL_ENTER("wolfSSL_sk_ASN1_OBJECT_pop_free");
+    (void)f;
 
     if (sk == NULL) {
         return;
@@ -21949,7 +21950,7 @@ const char* wolfSSL_state_string_long(const WOLFSSL* ssl)
 /*
  * Sets default PEM callback password if null is passed into
  * the callback parameter of a PEM_read_bio_* function.
- * 
+ *
  * Returns callback phrase size on success or WOLFSSL_FAILURE otherwise.
  */
 int wolfSSL_PEM_def_callback(char* name, int num, int w, void* key)
@@ -21960,7 +21961,7 @@ int wolfSSL_PEM_def_callback(char* name, int num, int w, void* key)
 
     /* We assume that the user passes a default password as userdata */
     if (key) {
-        Sz = (int) strlen(key);
+        Sz = (int) strlen((const char*)key);
         Sz = (Sz > num) ? num : Sz;
         memcpy(name, key, Sz);
         return Sz;
@@ -23467,7 +23468,8 @@ void wolfSSL_sk_pop_free(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk,
             wolfSSL_sk_ACCESS_DESCRIPTION_pop_free(sk, NULL);
             break;
         default:
-            wolfSSL_sk_ASN1_OBJECT_pop_free(sk, (void*)func);
+            wolfSSL_sk_ASN1_OBJECT_pop_free(sk,
+                                          (void (*)(WOLFSSL_ASN1_OBJECT*))func);
             break;
     }
 }
@@ -31838,7 +31840,8 @@ WOLFSSL_EVP_PKEY *wolfSSL_PEM_read_bio_PUBKEY(WOLFSSL_BIO* bio,
 }
 
 
-#ifndef NO_RSA
+#if defined(WOLFSSL_KEY_GEN) || defined(WOLFSSL_CERT_GEN)
+#if (defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)) && !defined(NO_RSA)
 /* Uses the same format of input as wolfSSL_PEM_read_bio_PrivateKey but expects
  * the results to be an RSA key.
  *
@@ -31874,10 +31877,11 @@ WOLFSSL_RSA* wolfSSL_PEM_read_bio_RSAPrivateKey(WOLFSSL_BIO* bio,
     wolfSSL_EVP_PKEY_free(pkey);
     return local;
 }
-#endif /* !NO_RSA */
+#endif /* WOLFSSL_KEY_GEN || WOLFSSL_CERT_GEN */
+#endif /* OPENSSL_EXTRA || OPENSSL_ALL || !NO_RSA */
 
-#if defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
-       !defined(NO_FILESYSTEM) && !defined(NO_DSA) && defined(WOLFSSL_KEY_GEN)
+#if (defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)) && (!defined(NO_CERTS) && \
+       !defined(NO_FILESYSTEM) && !defined(NO_DSA) && defined(WOLFSSL_KEY_GEN))
 /* Uses the same format of input as wolfSSL_PEM_read_bio_PrivateKey but expects
  * the results to be an DSA key.
  *
@@ -38998,6 +39002,7 @@ int wolfSSL_EVP_PKEY_assign_RSA(EVP_PKEY* pkey, WOLFSSL_RSA* key)
 }
 #endif
 
+#if !defined(NO_DSA)
 int wolfSSL_EVP_PKEY_assign_DSA(EVP_PKEY* pkey, WOLFSSL_DSA* key)
 {
     if (pkey == NULL || key == NULL)
@@ -39009,6 +39014,7 @@ int wolfSSL_EVP_PKEY_assign_DSA(EVP_PKEY* pkey, WOLFSSL_DSA* key)
 
     return WOLFSSL_SUCCESS;
 }
+#endif
 
 int wolfSSL_EVP_PKEY_assign_EC_KEY(EVP_PKEY* pkey, WOLFSSL_EC_KEY* key)
 {
