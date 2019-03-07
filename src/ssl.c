@@ -31371,6 +31371,8 @@ int wolfSSL_PEM_write_bio_DSAPrivateKey(WOLFSSL_BIO* bio, WOLFSSL_DSA* dsa,
     return ret;
 }
 
+
+#ifndef HAVE_SELFTEST
 /* Takes a DSA public key and writes it out to a WOLFSSL_BIO
  * Returns WOLFSSL_SUCCESS or WOLFSSL_FAILURE
  */
@@ -31440,6 +31442,8 @@ int wolfSSL_PEM_write_bio_DSA_PUBKEY(WOLFSSL_BIO* bio, WOLFSSL_DSA* dsa)
     wolfSSL_EVP_PKEY_free(pkey);
     return ret;
 }
+#endif /* HAVE_SELFTEST */
+
 
 /* return code compliant with OpenSSL :
  *   1 if success, 0 if error
