@@ -1144,11 +1144,17 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
 
     return result;
 }
-
-int wolfIO_HttpBuildRequest(const char* reqType, const char* domainName,
-    const char* path, int pathLen, int reqSz, const char* contentType,
-    const char* exHdrs, byte* buf, int bufSize)
+int wolfIO_HttpBuildRequest(const char *reqType, const char *domainName,
+                               const char *path, int pathLen, int reqSz, const char *contentType,
+                               byte *buf, int bufSize)
 {
+    return wolfIO_HttpBuildRequest_ex(reqType, domainName, path, pathLen, reqSz, contentType, "", buf, bufSize);
+}
+
+    int wolfIO_HttpBuildRequest_ex(const char *reqType, const char *domainName,
+                                const char *path, int pathLen, int reqSz, const char *contentType,
+                                const char *exHdrs, byte *buf, int bufSize)
+    {
     word32 reqTypeLen, domainNameLen, reqSzStrLen, contentTypeLen, exHdrsLen, maxLen;
     char reqSzStr[6];
     char* req = (char*)buf;
@@ -1157,7 +1163,7 @@ int wolfIO_HttpBuildRequest(const char* reqType, const char* domainName,
     const char* hostStr = "\r\nHost: ";
     const char* contentLenStr = "\r\nContent-Length: ";
     const char* contentTypeStr = "\r\nContent-Type: ";
-    const char *singleCrLfStr = "\r\n";
+    const char* singleCrLfStr = "\r\n";
     const char* doubleCrLfStr = "\r\n\r\n";
     word32 blankStrLen, http11StrLen, hostStrLen, contentLenStrLen,
         contentTypeStrLen, singleCrLfStrLen, doubleCrLfStrLen;
@@ -1255,7 +1261,7 @@ int wolfIO_HttpBuildRequestOcsp(const char* domainName, const char* path,
                                     int ocspReqSz, byte* buf, int bufSize)
 {
     const char *cacheCtl = "Cache-Control: no-cache";
-    return wolfIO_HttpBuildRequest("POST", domainName, path, (int)XSTRLEN(path),
+    return wolfIO_HttpBuildRequest_ex("POST", domainName, path, (int)XSTRLEN(path),
         ocspReqSz, "application/ocsp-request", cacheCtl, buf, bufSize);
 }
 
@@ -1369,7 +1375,7 @@ int wolfIO_HttpBuildRequestCrl(const char* url, int urlSz,
     const char* domainName, byte* buf, int bufSize)
 {
     const char *cacheCtl = "Cache-Control: no-cache";
-    return wolfIO_HttpBuildRequest("GET", domainName, url, urlSz, 0, "",
+    return wolfIO_HttpBuildRequest_ex("GET", domainName, url, urlSz, 0, "",
                                    cacheCtl, buf, bufSize);
 }
 
