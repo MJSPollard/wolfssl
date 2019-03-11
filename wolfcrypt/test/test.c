@@ -9106,9 +9106,9 @@ int decodedCertCache_test(void)
 
     if (ret == 0) {
         /* load cert.der */
-        file = fopen(certDerFile, "rb");
+        file = XFOPEN(certDerFile, "rb");
         if (file != NULL) {
-            derSz = fread(der, 1, FOURK_BUF, file);
+            derSz = XFREAD(der, 1, FOURK_BUF, file);
             fclose(file);
         }
         else
