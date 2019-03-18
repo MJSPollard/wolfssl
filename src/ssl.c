@@ -19300,6 +19300,7 @@ int wolfSSL_X509_cmp(const WOLFSSL_X509 *a, const WOLFSSL_X509 *b)
 char* wolfSSL_CIPHER_description_all(const WOLFSSL_CIPHER* cipher, char* in,
         int len)
 {
+    char *ret = in;
     const char* name;
     const char *keaStr, *authStr, *encStr, *macStr, *protocol;
     char n0[MAX_SEGMENT_SZ], n1[MAX_SEGMENT_SZ], n2[MAX_SEGMENT_SZ],
@@ -19417,7 +19418,7 @@ char* wolfSSL_CIPHER_description_all(const WOLFSSL_CIPHER* cipher, char* in,
     XSTRNCPY(in, macStr, len);
     in[len-1] = '\0';
 
-    return in;
+    return ret;
 }
 #endif /* defined(WOLFSSL_QT) || defined(OPENSSL_ALL) */
 
