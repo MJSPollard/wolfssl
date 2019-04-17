@@ -20811,9 +20811,9 @@ WOLFSSL_X509_STORE_CTX* wolfSSL_X509_STORE_CTX_new(void)
 int wolfSSL_X509_STORE_CTX_init(WOLFSSL_X509_STORE_CTX* ctx,
      WOLFSSL_X509_STORE* store, WOLFSSL_X509* x509, WOLF_STACK_OF(WOLFSSL_X509)* sk)
 {
-    (void)sk;
     WOLFSSL_X509* x509_cert;
     int ret = 0;
+    (void)sk;
 
     WOLFSSL_ENTER("wolfSSL_X509_STORE_CTX_init");
     if (ctx != NULL) {
@@ -20951,7 +20951,7 @@ int wolfSSL_X509_verify_cert(WOLFSSL_X509_STORE_CTX* ctx)
             error = GetX509Error(ret);
             /* Set error depth */
             if (ctx->chain)
-                depth = ctx->chain->num;
+                depth = (int)ctx->chain->num;
 
             wolfSSL_X509_STORE_CTX_set_error(ctx, error);
             wolfSSL_X509_STORE_CTX_set_error_depth(ctx, depth);
