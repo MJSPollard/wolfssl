@@ -506,6 +506,9 @@ const char* wc_GetErrorString(int error)
     case CRYPTOCB_UNAVAILABLE:
         return "Crypto callback unavailable";
 
+    case ASN_SELF_SIGNED_E:
+        return "ASN self-signed certificate error";
+
     default:
         return "unknown error number";
 
