@@ -12881,7 +12881,6 @@ static int test_wc_DsaKeyToDer (void)
 
     printf(resultFmt, ret == 0 ? passed : failed);
 
-    XFREE(der, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     wc_FreeDsaKey(&genKey);
 
 #endif
@@ -12949,6 +12948,7 @@ static int test_wc_DsaKeyToPublicDer(void)
         ret = WOLFSSL_FATAL_ERROR;
     }
 
+    XFREE(der, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     printf(resultFmt, ret == 0 ? passed : failed);
 
     wc_FreeDsaKey(&genKey);
