@@ -3373,7 +3373,6 @@ typedef struct Arrays {
 #define STACK_TYPE_ACCESS_DESCRIPTION 6
 
 struct WOLFSSL_STACK {
-    byte type;     /* Set to STACK_TYPE_*. identifies type stored in data.*/
     unsigned long num; /* number of nodes in stack
                         * (safety measure for freeing and shortcut for count) */
     union {
@@ -3388,6 +3387,7 @@ struct WOLFSSL_STACK {
         char*                  string;
     } data;
     WOLFSSL_STACK* next;
+    byte type;     /* Identifies type of stack. */
 };
 
 struct WOLFSSL_X509_NAME {

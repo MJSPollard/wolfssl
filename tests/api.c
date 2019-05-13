@@ -23161,17 +23161,18 @@ static void test_wolfSSL_X509_EXTENSION_get_critical(void)
 
 static void test_wolfSSL_CIPHER_description_all(void)
 {
-    char buf[256];
-    char test_str[9] = "0000000\0";
-    const char badStr[] = "unknown\0";
-    const char certPath[] = "./certs/client-cert.pem";
+    const long flags = SSL_OP_NO_SSLv2 | SSL_OP_NO_COMPRESSION;
+    int i,j,k;
+    int numCiphers = 0;
     const SSL_METHOD *method = NULL;
     const SSL_CIPHER *cipher = NULL;
     STACK_OF(SSL_CIPHER) *supportedCiphers = NULL;
     SSL_CTX *ctx = NULL;
     SSL *ssl = NULL;
-    const long flags = SSL_OP_NO_SSLv2 | SSL_OP_NO_COMPRESSION;
-    int i,j,k;
+    char buf[256];
+    char test_str[9] = "0000000\0";
+    const char badStr[] = "unknown\0";
+    const char certPath[] = "./certs/client-cert.pem";
     XMEMSET(buf, 0, sizeof(buf));
 
     printf(testingFmt, "wolfSSL_CIPHER_description_all");
@@ -23185,7 +23186,7 @@ static void test_wolfSSL_CIPHER_description_all(void)
     SSL_CTX_set_verify_depth(ctx, 4);
 
     SSL_CTX_set_options(ctx, flags);
-    AssertIntEQ(SSL_CTX_load_verify_locations(ctx, certPath, NULL), \
+    AssertIntEQ(SSL_CTX_load_verify_locations(ctx, certPath, NULL),
                 WOLFSSL_SUCCESS);
 
     AssertNotNull(ssl = SSL_new(ctx));
@@ -23197,7 +23198,8 @@ static void test_wolfSSL_CIPHER_description_all(void)
     AssertNotNull(supportedCiphers = SSL_get_ciphers(ssl));
 
     /* loop through the amount of supportedCiphers */
-    for (i = 0; i < sk_num(supportedCiphers); ++i) {
+    numCiphers = sk_num(supportedCiphers);
+    for (i = 0; i < numCiphers; ++i) {
 
         /* since the stack of supportedCiphers is acctually copies of the same
          * "cipher object". sk_value increments "sk->data.cipher->cipherOffset"
@@ -23246,7 +23248,7 @@ static void test_wolfSSL_get_ciphers_compat(void) {
     SSL_CTX_set_verify_depth(ctx, 4);
 
     SSL_CTX_set_options(ctx, flags);
-    AssertIntEQ(SSL_CTX_load_verify_locations(ctx, certPath, NULL), \
+    AssertIntEQ(SSL_CTX_load_verify_locations(ctx, certPath, NULL),
                 WOLFSSL_SUCCESS);
 
     AssertNotNull(ssl = SSL_new(ctx));

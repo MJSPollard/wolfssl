@@ -2325,8 +2325,9 @@ int ToTraditionalInline_ex(const byte* input, word32* inOutIdx, word32 sz,
 
     ret = GetOctetString(input, &idx, &length, sz);
     if (ret < 0) {
-        /* Don't error out if return is error - some private keys do not expect
-           octet string here. */
+        if (ret == BUFFER_E)
+            return ASN_PARSE_E;
+        /* Some private keys don't expect an octet string */
         WOLFSSL_MSG("Couldn't find Octet string");
     }
 
