@@ -19818,10 +19818,40 @@ static int msgCb(SSL_CTX *ctx, SSL *ssl)
 {
     (void) ctx;
     (void) ssl;
+    #ifdef WOLFSSL_QT
+    STACK_OF(X509)* sk;
+    X509* x509;
+    int i, num;
+    BIO* bio;
+    #endif
     printf("\n===== msgcb called ====\n");
     #if defined(SESSION_CERTS) && defined(TEST_PEER_CERT_CHAIN)
     AssertTrue(SSL_get_peer_cert_chain(ssl) != NULL);
     AssertIntEQ(((WOLFSSL_X509_CHAIN *)SSL_get_peer_cert_chain(ssl))->count, 1);
+    #endif
+
+    #ifdef WOLFSSL_QT
+    bio = BIO_new(BIO_s_file());
+    BIO_set_fp(bio, stdout, BIO_NOCLOSE);
+    sk = SSL_get_peer_cert_chain(ssl);
+    AssertNotNull(sk);
+    if (!sk) {
+        BIO_free(bio);
+        return SSL_FAILURE;
+    }
+    num = sk_X509_num(sk);
+    AssertTrue(num > 0);
+    for (i = 0; i < num; i++) {
+        x509 = sk_X509_value(sk,i);
+        AssertNotNull(x509);
+        if (!x509)
+            break;
+        printf("Certificate at index [%d] = :\n",i);
+        X509_print(bio,x509);
+        printf("\n\n");
+    }
+    BIO_free(bio);
+    sk_X509_free(sk);
     #endif
     return SSL_SUCCESS;
 }

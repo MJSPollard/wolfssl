@@ -16158,11 +16158,13 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md)
      * x509  WOLFSSL_X509 object to decode into.
      * in    X509 DER data.
      * len   Length of the X509 DER data.
-     * returns the new certificate on success, otherwise NULL.
+     * returns 0 on Success, or Error Code on Failure
      */
     static int DecodeToX509(WOLFSSL_X509* x509, const byte* in, int len)
     {
-        int          ret;
+        int ret;
+        if (x509 == NULL || in == NULL || len <= 0)
+            return BAD_FUNC_ARG;
     #ifdef WOLFSSL_SMALL_STACK
         DecodedCert* cert = NULL;
     #else
@@ -16180,7 +16182,9 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md)
          */
         InitDecodedCert(cert, (byte*)in, len, NULL);
         if ((ret = ParseCertRelative(cert, CERT_TYPE, 0, NULL)) == 0) {
-            InitX509(x509, 0, NULL);
+        /* Check if x509 was not previously initialized by wolfSSL_X509_new() */
+            if (x509->dynamicMemory != TRUE)
+                InitX509(x509, 0, NULL);
             ret = CopyDecodedToX509(x509, cert);
             FreeDecodedCert(cert);
         }
@@ -16219,47 +16223,45 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md)
 WOLF_STACK_OF(WOLFSSL_X509)* wolfSSL_get_peer_cert_chain(const WOLFSSL* ssl)
 {
     WOLFSSL_ENTER("wolfSSL_get_peer_cert_chain");
-#ifdef WOLFSSL_QT
+
     WOLFSSL_STACK* sk;
+#ifdef WOLFSSL_QT
     WOLFSSL_X509* x509;
     int i = 0;
-    int count = 0;
+    int ret;
 #endif
-
-    if ((ssl == NULL) || (ssl->session.chain.count == 0)) {
+    if ((ssl == NULL) || (ssl->session.chain.count == 0))
         return NULL;
-    }
 
-    else {
 #ifdef WOLFSSL_QT
-        sk = (WOLF_STACK_OF(WOLFSSL_X509)* )&ssl->session.chain;
-        if (sk == NULL) {
-            WOLFSSL_MSG("Session chain NULL error");
+    sk = wolfSSL_sk_X509_new();
+    for (; i < ssl->session.chain.count; i++) {
+        /* For servers, the peer certificate chain does not include the peer
+            certificate, so do not add it to the stack */
+        if (ssl->options.side == WOLFSSL_SERVER_END && i == 0)
+            continue;
+        x509 = wolfSSL_X509_new();
+        if (x509 == NULL) {
+            WOLFSSL_MSG("Error Creating X509");
+            return NULL;
         }
-        for (; i < ssl->session.chain.count; i++) {
-            x509 = (WOLFSSL_X509*)XMALLOC(sizeof(WOLFSSL_X509), NULL, \
-                                          DYNAMIC_TYPE_X509);
-            int ret = DecodeToX509(x509, ssl->session.chain.certs[i].buffer,
-                                 ssl->session.chain.certs[i].length);
-            if (ret != 0) {
-                WOLFSSL_MSG("Error decoding cert");
-            }
-            /* For servers, the peer certificate chain does not include the peer
-                certificate, so do not add it to the stack */
-            if ((ssl->options.side == WOLFSSL_SERVER_END && i != 0) || \
-                 ssl->options.side == WOLFSSL_CLIENT_END) {
-                    wolfSSL_sk_X509_push(sk, x509);
-                    count++;
-            }
+        ret = DecodeToX509(x509, ssl->session.chain.certs[i].buffer,
+                             ssl->session.chain.certs[i].length);
+
+        if (ret != 0 || wolfSSL_sk_X509_push(sk, x509) != WOLFSSL_SUCCESS) {
+            WOLFSSL_MSG("Error decoding cert");
             wolfSSL_X509_free(x509);
+            wolfSSL_sk_X509_free(sk);
+            return NULL;
         }
-        sk->type = STACK_TYPE_X509;
-        sk->num = count;
-        return sk;
-#else
-        return (WOLF_STACK_OF(WOLFSSL_X509)* )&ssl->session.chain;
-#endif
     }
+#else
+    sk = (WOLF_STACK_OF(WOLFSSL_X509)* )&ssl->session.chain;
+#endif
+    if (sk == NULL) {
+        WOLFSSL_MSG("Null session chain");
+    }
+    return sk;
 }
 #endif
 
@@ -24093,7 +24095,7 @@ void wolfSSL_sk_free(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk)
     wolfSSL_sk_ASN1_OBJECT_free(sk);
 }
 
-/* Free all nodes in an ASN1_OBJECT stack */
+/* Free all nodes in a stack */
 void wolfSSL_sk_pop_free(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk,
                                                        wolfSSL_sk_freefunc func)
 {
@@ -24109,6 +24111,9 @@ void wolfSSL_sk_pop_free(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk,
     #if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
         case STACK_TYPE_ACCESS_DESCRIPTION:
             wolfSSL_sk_ACCESS_DESCRIPTION_pop_free(sk, NULL);
+            break;
+        case STACK_TYPE_X509:
+            wolfSSL_sk_X509_pop_free(sk,NULL);
             break;
     #endif
         default:
@@ -39849,6 +39854,8 @@ WOLFSSL_STACK* wolfSSL_sk_X509_new(void)
                                                              DYNAMIC_TYPE_X509);
     if (s != NULL)
         XMEMSET(s, 0, sizeof(*s));
+
+    s->type = STACK_TYPE_X509;
 
     return s;
 }
