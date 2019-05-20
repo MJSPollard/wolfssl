@@ -17016,30 +17016,11 @@ void wolfSSL_sk_X509_pop_free(STACK_OF(WOLFSSL_X509)* sk, void f (WOLFSSL_X509*)
 /* free structure for x509 stack */
 void wolfSSL_sk_X509_free(WOLF_STACK_OF(WOLFSSL_X509_NAME)* sk)
 {
-    WOLFSSL_STACK* node;
-
+    WOLFSSL_ENTER("wolfSSL_sk_X509_free");
     if (sk == NULL) {
         return;
     }
-
-    /* parse through stack freeing each node */
-    node = sk->next;
-    while (sk->num > 1) {
-        WOLFSSL_STACK* tmp = node;
-        node = node->next;
-
-        wolfSSL_X509_free(tmp->data.x509);
-        tmp->data.x509 = NULL;
-        XFREE(tmp, NULL, DYNAMIC_TYPE_X509);
-        sk->num -= 1;
-    }
-
-    /* free head of stack */
-    if (sk->num == 1) {
-        wolfSSL_X509_free(sk->data.x509);
-        sk->data.x509 = NULL;
-    }
-    XFREE(sk, NULL, DYNAMIC_TYPE_X509);
+    wolfSSL_sk_X509_pop_free(sk,X509_free);
 }
 
 #endif /* NO_CERTS && OPENSSL_EXTRA */
@@ -24113,7 +24094,7 @@ void wolfSSL_sk_pop_free(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk,
             wolfSSL_sk_ACCESS_DESCRIPTION_pop_free(sk, NULL);
             break;
         case STACK_TYPE_X509:
-            wolfSSL_sk_X509_pop_free(sk,NULL);
+            wolfSSL_sk_X509_pop_free(sk,(void (*)(WOLFSSL_X509*))func);
             break;
     #endif
         default:
@@ -39852,9 +39833,9 @@ WOLFSSL_STACK* wolfSSL_sk_X509_new(void)
 {
     WOLFSSL_STACK* s = (WOLFSSL_STACK*)XMALLOC(sizeof(WOLFSSL_STACK), NULL,
                                                              DYNAMIC_TYPE_X509);
-    if (s != NULL)
-        XMEMSET(s, 0, sizeof(*s));
-
+    if (s == NULL)
+        return NULL;
+    XMEMSET(s, 0, sizeof(*s));
     s->type = STACK_TYPE_X509;
 
     return s;
