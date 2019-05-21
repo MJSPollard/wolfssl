@@ -17982,12 +17982,12 @@ WOLFSSL_STACK* wolfSSL_sk_new_cipher(void)
 }
 
 /* return 1 on success 0 on fail */
-int wolfSSL_sk_WOLFSSL_CIPHER_push(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk,
+int wolfSSL_sk_CIPHER_push(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk,
                                                       WOLFSSL_CIPHER* cipher)
 {
     WOLFSSL_STACK* node;
 
-    WOLFSSL_ENTER("wolfSSL_sk_WOLFSSL_CIPHER_push");
+    WOLFSSL_ENTER("wolfSSL_sk_CIPHER_push");
 
     if (sk == NULL || cipher == NULL) {
         return WOLFSSL_FAILURE;
@@ -18021,7 +18021,7 @@ int wolfSSL_sk_WOLFSSL_CIPHER_push(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk,
 }
 
 
-WOLFSSL_CIPHER* wolfSSL_sk_WOLFSSL_CIPHER_pop(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk)
+WOLFSSL_CIPHER* wolfSSL_sk_CIPHER_pop(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk)
 {
     WOLFSSL_STACK* node;
     WOLFSSL_CIPHER* cipher;
@@ -18048,6 +18048,32 @@ WOLFSSL_CIPHER* wolfSSL_sk_WOLFSSL_CIPHER_pop(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk)
 
     return cipher;
 }
+
+/* Free the structure for WOLFSSL_CIPHER stack
+ *
+ * sk  stack to free nodes in
+ */
+void wolfSSL_sk_CIPHER_free(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk)
+{
+    WOLFSSL_STACK* node;
+    WOLFSSL_STACK* tmp;
+    WOLFSSL_ENTER("wolfSSL_sk_CIPHER_free");
+
+    if (sk == NULL)
+        return;
+
+    /* parse through stack freeing each node */
+    node = sk->next;
+    while (node) {
+        tmp  = node;
+        node = node->next;
+        XFREE(tmp, NULL, DYNAMIC_TYPE_OPENSSL);
+    }
+
+    /* free head of stack */
+    XFREE(sk, NULL, DYNAMIC_TYPE_ASN1);
+}
+
 
 #endif /* WOLFSSL_QT || OPENSSL_ALL */
 
@@ -19455,113 +19481,7 @@ int wolfSSL_X509_cmp(const WOLFSSL_X509 *a, const WOLFSSL_X509 *b)
         return WOLFSSL_SUCCESS;
     }
 #endif /* XSNPRINTF */
-
 #endif /* NO_CERTS */
-
-#if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
-char* wolfSSL_CIPHER_description_all(const WOLFSSL_CIPHER* cipher, char* in,
-        int len)
-{
-    unsigned long offset;
-    int i,j,k,inbounds;
-    int strLen;
-    char *ret = in;
-    const char* name;
-    const char *keaStr, *authStr, *encStr, *macStr, *protocol;
-    char n[MAX_SEGMENTS][MAX_SEGMENT_SZ] = {{0}};
-    byte cipherSuite0, cipherSuite;
-
-    WOLFSSL_ENTER("wolfSSL_CIPHER_description");
-    if (!cipher || !cipher->ssl || !cipher->ssl->suites)
-        return NULL;
-
-    /* offset is in multiples of 2 due to ssl->suites->suites containing
-     * two consecutive identifiers for one cipher suite, e.g:
-     * cipherSuite0 = TLS13_BYTE
-     * cipherSuite  = TLS_AES_128_GCM_SHA256
-     */
-    offset = 2*(cipher->cipherOffset);
-    cipherSuite0 = cipher->ssl->suites->suites[offset];
-    cipherSuite = cipher->ssl->suites->suites[offset+1];
-
-    name = wolfSSL_get_cipher_name_from_suite(cipherSuite0, cipherSuite);
-    protocol = GetCipherProtocol(cipherSuite0, cipherSuite);
-    if (name == NULL)
-        return NULL;
-
-    /* Segment cipher name into n[n0,n1,n2,n4]
-     * These are used later for comparisons to create:
-     * keaStr, authStr, encStr, macStr
-     *
-     * If cipher_name = ECDHE-ECDSA-AES256-SHA
-     * then n0 = "ECDHE", n1 = "ECDSA", n2 = "AES256", n3 = "SHA"
-     * and n = [n0,n1,n2,n3,0]
-     */
-    strLen = (int)XSTRLEN(name);
-
-    for(i=0,j=0,k=0; i < strLen; i++) {
-        inbounds = k < MAX_SEGMENTS && j < MAX_SEGMENT_SZ;
-        if(name[i] != '-' && inbounds) {
-            n[k][j] = name[i]; /* Fill kth segment string until '-' */
-            j++;
-        }
-        else if(inbounds) {
-            n[k][j] = '\0';
-            j = 0;
-            k++;
-        }
-    }
-    /* keaStr */
-    keaStr = GetCipherKeaStr(n);
-    /* authStr */
-    authStr = GetCipherAuthStr(n);
-    /* encStr */
-    encStr = GetCipherEncStr(n);
-    /* macStr */
-    macStr = GetCipherMacStr(n);
-
-    /* Build up the string by copying onto the end. */
-    XSTRNCPY(in, name, len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-
-    XSTRNCPY(in, " ", len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-    XSTRNCPY(in, protocol, len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-
-    XSTRNCPY(in, " Kx=", len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-    XSTRNCPY(in, keaStr, len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-
-    XSTRNCPY(in, " Au=", len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-    XSTRNCPY(in, authStr, len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-
-    XSTRNCPY(in, " Enc=", len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-    XSTRNCPY(in, encStr, len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-
-    XSTRNCPY(in, " Mac=", len);
-    in[len-1] = '\0'; strLen = (int)XSTRLEN(in);
-    len -= (int)strLen; in += strLen;
-    XSTRNCPY(in, macStr, len);
-    in[len-1] = '\0';
-
-    return ret;
-}
-#endif /* defined(WOLFSSL_QT) || defined(OPENSSL_ALL) */
 
 char* wolfSSL_CIPHER_description(const WOLFSSL_CIPHER* cipher, char* in,
                                  int len)
@@ -19576,8 +19496,8 @@ char* wolfSSL_CIPHER_description(const WOLFSSL_CIPHER* cipher, char* in,
         return NULL;
 
 #if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
-    if (cipher->getCipherAtOffset)
-        return wolfSSL_CIPHER_description_all(cipher, in, len);
+    XSTRNCPY(in,cipher->description,len);
+    return ret;
 #endif
 
     switch (cipher->ssl->specs.kea) {
@@ -24048,8 +23968,10 @@ void* wolfSSL_sk_value(WOLF_STACK_OF(WOLFSSL_ASN1_OBJECT)* sk, int i)
             return (void*)sk->data.x509;
     #if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
         case STACK_TYPE_CIPHER:
-            if (sk->data.cipher)
-                sk->data.cipher->cipherOffset = offset;
+            if (sk->data.cipher == NULL)
+                return NULL;
+            sk->data.cipher->cipherOffset = offset;
+            wolfSSL_sk_CIPHER_update(sk->data.cipher);
             return (void*)sk->data.cipher;
         case STACK_TYPE_NAME:
             gn = (WOLFSSL_GENERAL_NAME*)sk->data.obj;
@@ -37492,7 +37414,11 @@ int wolfSSL_CIPHER_get_bits(const WOLFSSL_CIPHER *c, int *alg_bits)
     int ret = WOLFSSL_FAILURE;
     WOLFSSL_ENTER("wolfSSL_CIPHER_get_bits");
     if(c != NULL && c->ssl != NULL) {
-        ret = 8 * c->ssl->specs.key_size;
+        #if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
+            ret = c->bits;
+        #else
+            ret = 8 * c->ssl->specs.key_size;
+        #endif
         if(alg_bits != NULL) {
             *alg_bits = ret;
         }
@@ -38254,7 +38180,7 @@ WOLF_STACK_OF(WOLFSSL_CIPHER) *wolfSSL_get_ciphers_compat(const WOLFSSL *ssl)
 
     /* Pushes the same cipher onto the stack */
     for (i = 0; i < suiteSz; i++) {
-        wolfSSL_sk_WOLFSSL_CIPHER_push(sk, cipher);
+        wolfSSL_sk_CIPHER_push(sk, cipher);
     }
 
     return sk;

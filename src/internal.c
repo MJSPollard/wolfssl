@@ -16605,16 +16605,16 @@ const char* GetCipherKeaStr(char n[][MAX_SEGMENT_SZ]) {
     n3 = n[3];
     n4 = n[4];
 
-    if ((XSTRNCMP(n0,"ECDHE",5) == 0 && XSTRNCMP(n1, "PSK",3) != 0) ||
+    if ((XSTRNCMP(n0,"ECDHE",5) == 0 && XSTRNCMP(n1,"PSK",3) != 0) ||
          XSTRNCMP(n0,"ECDH",4) == 0)
         keaStr = "ECDH";
-    else if (XSTRNCMP(n0,"ECDHE",5) == 0 && XSTRNCMP(n1, "PSK",3) == 0)
+    else if (XSTRNCMP(n0,"ECDHE",5) == 0 && XSTRNCMP(n1,"PSK",3) == 0)
         keaStr = "ECDHEPSK";
-    else if (XSTRNCMP(n0,"DHE",3) == 0 && XSTRNCMP(n1, "PSK",3) != 0)
+    else if (XSTRNCMP(n0,"DHE",3) == 0 && XSTRNCMP(n1,"PSK",3) != 0)
         keaStr = "DH";
-    else if (XSTRNCMP(n0,"DHE",3) == 0 && XSTRNCMP(n1, "PSK",3) == 0)
+    else if (XSTRNCMP(n0,"DHE",3) == 0 && XSTRNCMP(n1,"PSK",3) == 0)
         keaStr = "DHEPSK";
-    else if (XSTRNCMP(n0,"RSA",3) == 0 && XSTRNCMP(n1, "PSK",3) == 0)
+    else if (XSTRNCMP(n0,"RSA",3) == 0 && XSTRNCMP(n1,"PSK",3) == 0)
         keaStr = "RSAPSK";
     else if (XSTRNCMP(n0,"SRP",3) == 0)
         keaStr = "SRP";
@@ -16696,7 +16696,7 @@ const char* GetCipherEncStr(char n[][MAX_SEGMENT_SZ]) {
         encStr = "CAMELLIA(128)";
     else if ((XSTRNCMP(n0,"RC4",3) == 0) || (XSTRNCMP(n2,"RC4",3) == 0))
         encStr = "RC4";
-    else if (((XSTRNCMP(n0,"DES",3) == 0) || (XSTRNCMP(n2,"DES",3) == 0)) &&
+    else if (((XSTRNCMP(n0,"DES",3) == 0)  || (XSTRNCMP(n2,"DES",3) == 0)) &&
              ((XSTRNCMP(n1,"CBC3",4) == 0) || (XSTRNCMP(n3,"CBC3",4) == 0)))
         encStr = "3DES";
     else if (XSTRNCMP(n2,"CHACHA20",8) == 0 && XSTRNCMP(n3,"POLY1305",8) == 0)
@@ -16743,6 +16743,133 @@ const char* GetCipherMacStr(char n[][MAX_SEGMENT_SZ]) {
         macStr = "unknown";
 
     return macStr;
+}
+
+int SetCipherBits(const char* enc) {
+    int ret = WOLFSSL_FAILURE;
+
+    if ((XSTRNCMP(enc,"AESGCM(256)",11) == 0) ||
+        (XSTRNCMP(enc,"AES(256)",8) == 0) ||
+        (XSTRNCMP(enc,"CAMELLIA(256)",13) == 0) ||
+        (XSTRNCMP(enc,"CHACHA20/POLY1305(256)",22) == 0))
+            ret = 256;
+    else if
+        ((XSTRNCMP(enc,"AESGCM(128)",11) == 0) ||
+         (XSTRNCMP(enc,"AES(128)",8) == 0) ||
+         (XSTRNCMP(enc,"CAMELLIA(128)",13) == 0))
+            ret = 128;
+
+    return ret;
+}
+
+int wolfSSL_sk_CIPHER_update(WOLFSSL_CIPHER* cipher)
+{
+    int ret = WOLFSSL_FAILURE;
+    int i,j,k;
+    int strLen;
+    uint8_t len = UINT8_SZ;
+    unsigned long offset;
+    char *dp = cipher->description;
+    const char* name;
+    const char *keaStr, *authStr, *encStr, *macStr, *protocol;
+    char n[MAX_SEGMENTS][MAX_SEGMENT_SZ] = {{0}};
+    byte cipherSuite0, cipherSuite;
+    WOLFSSL_ENTER("wolfSSL_CIPHER_sk_update");
+
+    if (cipher == NULL)
+        return WOLFSSL_FAILURE;
+
+    if (!cipher->cipherOffset) {
+        cipher->bits = 0;
+        cipher->description[0] = '\0';
+        return ret;
+    }
+
+    offset = 2*(cipher->cipherOffset);
+
+    cipherSuite0 = cipher->ssl->suites->suites[offset];
+    cipherSuite = cipher->ssl->suites->suites[offset+1];
+
+    name = wolfSSL_get_cipher_name_from_suite(cipherSuite0, cipherSuite);
+    protocol = GetCipherProtocol(cipherSuite0, cipherSuite);
+
+    if (name == NULL)
+        return ret;
+
+    /* Segment cipher name into n[n0,n1,n2,n4]
+     * These are used later for comparisons to create:
+     * keaStr, authStr, encStr, macStr
+     *
+     * If cipher_name = ECDHE-ECDSA-AES256-SHA
+     * then n0 = "ECDHE", n1 = "ECDSA", n2 = "AES256", n3 = "SHA"
+     * and n = [n0,n1,n2,n3,0]
+     */
+    strLen = (int)XSTRLEN(name);
+
+    for(i=0,j=0,k=0; i < strLen; i++) {
+        if(name[i] != '-' && k < MAX_SEGMENTS && j < MAX_SEGMENT_SZ) {
+            n[k][j] = name[i]; /* Fill kth segment string until '-' */
+            j++;
+        }
+        else if(k < MAX_SEGMENTS && j < MAX_SEGMENT_SZ) {
+            n[k][j] = '\0';
+            j = 0;
+            k++;
+        }
+    }
+    /* keaStr */
+    keaStr = GetCipherKeaStr(n);
+    /* authStr */
+    authStr = GetCipherAuthStr(n);
+    /* encStr */
+    encStr = GetCipherEncStr(n);
+    if ((cipher->bits = SetCipherBits(encStr)) == WOLFSSL_FAILURE) {
+       WOLFSSL_MSG("Cipher Bits Not Set.");
+    }
+    /* macStr */
+    macStr = GetCipherMacStr(n);
+
+
+    /* Build up the string by copying onto the end. */
+    XSTRNCPY(dp, name, len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+
+    XSTRNCPY(dp, " ", len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+    XSTRNCPY(dp, protocol, len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+
+    XSTRNCPY(dp, " Kx=", len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+    XSTRNCPY(dp, keaStr, len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+
+    XSTRNCPY(dp, " Au=", len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+    XSTRNCPY(dp, authStr, len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+
+    XSTRNCPY(dp, " Enc=", len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+    XSTRNCPY(dp, encStr, len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+
+    XSTRNCPY(dp, " Mac=", len);
+    dp[len-1] = '\0'; strLen = (int)XSTRLEN(dp);
+    len -= (int)strLen; dp += strLen;
+    XSTRNCPY(dp, macStr, len);
+    dp[len-1] = '\0';
+
+    return WOLFSSL_SUCCESS;
 }
 #endif /* WOLFSSL_QT || OPENSSL_ALL */
 

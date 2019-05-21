@@ -896,12 +896,7 @@ WOLFSSL_API const char*  wolfSSL_get_version(WOLFSSL*);
 WOLFSSL_API int  wolfSSL_get_current_cipher_suite(WOLFSSL* ssl);
 WOLFSSL_API WOLFSSL_CIPHER*  wolfSSL_get_current_cipher(WOLFSSL*);
 WOLFSSL_API char* wolfSSL_CIPHER_description(const WOLFSSL_CIPHER*, char*, int);
-#if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
-/* used in wolfSSL_CIPHER_description_all */
-#define MAX_SEGMENTS    5
-#define MAX_SEGMENT_SZ 20
-#endif
-WOLFSSL_API char* wolfSSL_CIPHER_description_all(const WOLFSSL_CIPHER*, char*, int);
+WOLFSSL_API void wolfSSL_sk_CIPHER_free(WOLF_STACK_OF(WOLFSSL_CIPHER)* sk);
 WOLFSSL_API const char*  wolfSSL_CIPHER_get_name(const WOLFSSL_CIPHER* cipher);
 WOLFSSL_API const char*  wolfSSL_SESSION_CIPHER_get_name(WOLFSSL_SESSION* session);
 WOLFSSL_API const char*  wolfSSL_get_cipher(WOLFSSL*);
