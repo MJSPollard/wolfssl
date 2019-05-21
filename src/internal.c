@@ -16754,10 +16754,19 @@ int SetCipherBits(const char* enc) {
         (XSTRNCMP(enc,"CHACHA20/POLY1305(256)",22) == 0))
             ret = 256;
     else if
+        ((XSTRNCMP(enc,"3DES",4) == 0))
+            ret = 168;
+    else if
         ((XSTRNCMP(enc,"AESGCM(128)",11) == 0) ||
          (XSTRNCMP(enc,"AES(128)",8) == 0) ||
-         (XSTRNCMP(enc,"CAMELLIA(128)",13) == 0))
+         (XSTRNCMP(enc,"CAMELLIA(128)",13) == 0) ||
+         (XSTRNCMP(enc,"IDEA",4) == 0) ||
+         (XSTRNCMP(enc,"RC4",3) == 0))
             ret = 128;
+   else if
+        ((XSTRNCMP(enc,"DES",3) == 0))
+            ret = 56;
+
 
     return ret;
 }
